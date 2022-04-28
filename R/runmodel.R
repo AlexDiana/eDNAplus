@@ -1,4 +1,75 @@
-# GENERAL -----------------------------------------------------------------
+
+cleanData <- function(data, data_spike){
+  
+  PCR_table <- data$PCR_table
+  infos <- data$infos
+  X_w0 <- data$X_w
+  X_z0 <- data$X_z
+  spikeInBiomass <- data$spikeInBiomass
+  spikeInPresent <- data$spikeInPresent
+  
+  S <- ncol(PCR_table) / max(K)
+  
+  sites <- unique(infos$Site)
+  sites <- setdiff(sites,"empty")
+  n <- length(sites)
+  samples <- unique(infos$Sample[infos$Site %in% sites])
+  M_site <- sapply(1:n, function(i){
+    length(unique(infos$Sample[infos$Site == sites[i]]))
+  })
+  
+  emptyTubes <- length(unique(infos$Sample[infos$Site == "empty"]))
+  
+  K <- infos$Replicates
+  
+  if(is.null(PCR_spike)){
+    S_star <- 0  
+  } else {
+    S_star <- ncol(PCR_spike) / max(K)
+  }
+  
+  if(is.null(spikeInBiomass)){
+    v_spikes <- matrix(0, nrow = sum(M_site) + emptyTubes,
+                       S_star)
+  } else {
+    v_spikes <- spikeInBiomass
+  }
+  
+  if(is.null(spikeInPresent)){
+    spikedSample <- rbind(matrix(1, sum(M_site), S_star),
+                          matrix(0, emptyTubes, S_star))
+  } else {
+    spikedSample <- spikeInPresent
+  }
+  
+  OTUnames <- colnames(PCR_table[,1:S])
+  if(S_star > 0){
+    OTUspike_names <- colnames(PCR_spike[,1:S_star])
+    OTUnames <- c(OTUnames, OTUspike_names)
+  }
+  
+  y <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S + S_star),
+             dimnames = list(NULL, NULL, OTUnames))
+  for (k in 1:max(K)) {
+    y[,k,1:S] <- as.matrix(PCR_table[,1:S + (k-1)*S,])
+    y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star,])
+  }
+  
+  X_w <- X_w0[match(samples, infos$Sample), ]
+  X_z <- X_z0[match(sites, infos$Site), ]
+  
+  data <- list("y" = y,
+               "M_site" = M_site,
+               "K" = K,
+               "emptyTubes" = emptyTubes,
+               "S_star" = S_star,
+               "spikedSample" = spikedSample,
+               "v_spikes" = v_spikes,
+               "X_w" = X_w,
+               "X_z" = X_z)
+  
+}
+
 
 fitModel <- function(data,
                      priors,
@@ -36,14 +107,6 @@ fitModel <- function(data,
                        "eta" = F
                      )){
   
-  # mcmc params
-  {
-    nchain <- MCMCparams$nchain
-    nburn <- MCMCparams$nburn
-    niter <- MCMCparams$niter
-    nthin <- MCMCparams$nthin
-    iterToAdapt <- MCMCparams$iterToAdapt  
-  }
   
   # clean data
   {
@@ -205,6 +268,15 @@ fitModel <- function(data,
       
     }
     
+  }
+  
+  # mcmc params
+  {
+    nchain <- MCMCparams$nchain
+    nburn <- MCMCparams$nburn
+    niter <- MCMCparams$niter
+    nthin <- MCMCparams$nthin
+    iterToAdapt <- MCMCparams$iterToAdapt  
   }
   
   # output
@@ -944,9 +1016,12 @@ fitModel <- function(data,
       
       # TAU ----------------------------------------------------------
       
-      Tau_params <- update_Tau(X_z, logz, beta0, beta_z,
-                               Tau_params, Tau_Priors,
-                               jointSpecies)
+      if(updateTau){
+        Tau_params <- update_Tau(X_z, logz, beta0, beta_z,
+                                 Tau_params, Tau_Priors,
+                                 jointSpecies)  
+      }
+      
       
       # if(updateTau){
       #   
@@ -1350,4 +1425,56 @@ fitModel <- function(data,
   )
   
   output <- list("params_output" = params_output)
+}
+
+
+runEDNA <- function(data0,
+                    priors,
+                    jointSpecies,
+                    trueParams,
+                    paramsUpdate = list(updateAll = T,
+                                        params = NULL,
+                                        correct = NULL),
+                    MCMCparams,
+                    paramsToSave = list(
+                      "lambda" = T,
+                      "beta0" = T,
+                      "mu" = T,
+                      "beta_z" = T,
+                      "logz" = T,
+                      "u" = T,
+                      "v" = F,
+                      "beta_w" = T,
+                      "Tau" = T,
+                      "sigma" = T,
+                      "beta_theta" = T,
+                      "theta" = F,
+                      "csi" = T,
+                      "delta" = F,
+                      "gamma" = F,
+                      "r" = T,
+                      "p11" = T,
+                      "p10" = T,
+                      "p10" = T,
+                      "mutilde" = T,
+                      "c_imk" = F,
+                      "mu0" = T,
+                      "n0" = T,
+                      "pi0" = T,
+                      "eta" = F
+                    )){
+  
+  data <- data0$data
+  data_spike <- data0$data_spike
+  
+  data <- cleanData(data, data_spike)
+  
+  modelResults <- fitModel(data,
+                           priors,
+                           jointSpecies,
+                           trueParams,
+                           paramsUpdate,
+                           MCMCparams)
+  
+  modelResults
 }

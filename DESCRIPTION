@@ -11,5 +11,8 @@ Description: More details about what the package does. See
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 7.1.2
-Imports: Rcpp (>= 1.0.7)
+Imports: 
+  Rcpp (>= 1.0.7),
+  GIGrvg,
+  MASS
 LinkingTo: Rcpp, RcppArmadillo

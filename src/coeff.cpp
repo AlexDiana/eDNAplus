@@ -1424,8 +1424,6 @@ arma::mat update_logz_cpp(arma::mat logz, arma::vec beta0,
       
       double logposterior = logprior + loglikelihood_v +
         logposterior_ratio_logistic + logproposal_ratio;
-      // double logposterior =  loglikelihood_v +
-      //   logposterior_ratio_logistic + logproposal_ratio;
       
       if(R::runif(0,1) < exp(logposterior)){
         
@@ -3286,7 +3284,7 @@ List update_u_poisgamma_cpp(arma::mat v,
   for(int i = 0; i < n; i++){
     for(int m = 0; m < M_site[i]; m++){
       for(int k = 0; k < K[l]; k++){
-        u(l, k) -= mean_u;
+        // u(l, k) -= mean_u;
       }
       l += 1;
     }
@@ -3301,7 +3299,7 @@ List update_u_poisgamma_cpp(arma::mat v,
   //   }
   // }
   for(int j = 0; j < (S + S_star); j++){
-    lambda[j] += mean_u;
+    // lambda[j] += mean_u;
     // lambdatilde[j] 
   }
   
