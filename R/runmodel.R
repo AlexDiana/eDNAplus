@@ -1,12 +1,16 @@
+# GENERAL -----------------------------------------------------------------
 
-cleanData <- function(data, data_spike){
+cleanData <- function(data){
   
   PCR_table <- data$PCR_table
   infos <- data$infos
   X_w0 <- data$X_w
   X_z0 <- data$X_z
+  PCR_spike <- data$PCR_spike
   spikeInBiomass <- data$spikeInBiomass
   spikeInPresent <- data$spikeInPresent
+  
+  K <- infos$Replicates
   
   S <- ncol(PCR_table) / max(K)
   
@@ -19,8 +23,6 @@ cleanData <- function(data, data_spike){
   })
   
   emptyTubes <- length(unique(infos$Sample[infos$Site == "empty"]))
-  
-  K <- infos$Replicates
   
   if(is.null(PCR_spike)){
     S_star <- 0  
@@ -55,8 +57,8 @@ cleanData <- function(data, data_spike){
     y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star,])
   }
   
-  X_w <- X_w0[match(samples, infos$Sample), ]
-  X_z <- X_z0[match(sites, infos$Site), ]
+  X_w <- as.matrix(X_w0[match(samples, infos$Sample), ])
+  X_z <- as.matrix(X_z0[match(sites, infos$Site), ])
   
   data <- list("y" = y,
                "M_site" = M_site,
@@ -70,9 +72,56 @@ cleanData <- function(data, data_spike){
   
 }
 
+runEDNA <- function(data0,
+                    priors = NULL,
+                    jointSpecies = F,
+                    trueParams,
+                    paramsUpdate = list(updateAll = T,
+                                        params = NULL,
+                                        correct = NULL),
+                    MCMCparams,
+                    paramsToSave = list(
+                      "lambda" = T,
+                      "beta0" = T,
+                      "mu" = T,
+                      "beta_z" = T,
+                      "logz" = T,
+                      "u" = T,
+                      "v" = F,
+                      "beta_w" = T,
+                      "Tau" = T,
+                      "sigma" = T,
+                      "beta_theta" = T,
+                      "theta" = F,
+                      "csi" = T,
+                      "delta" = F,
+                      "gamma" = F,
+                      "r" = T,
+                      "p11" = T,
+                      "p10" = T,
+                      "p10" = T,
+                      "mutilde" = T,
+                      "c_imk" = F,
+                      "mu0" = T,
+                      "n0" = T,
+                      "pi0" = T,
+                      "eta" = F
+                    )){
+  
+  data <- cleanData(data0)
+  
+  modelResults <- fitModel(data,
+                           priors,
+                           jointSpecies,
+                           trueParams,
+                           paramsUpdate,
+                           MCMCparams)
+  
+  modelResults
+}
 
 fitModel <- function(data,
-                     priors,
+                     priors = NULL,
                      jointSpecies,
                      trueParams,
                      paramsUpdate = list(updateAll = T,
@@ -107,8 +156,7 @@ fitModel <- function(data,
                        "eta" = F
                      )){
   
-  
-  # clean data
+  # read data
   {
     y <- data$y
     M_site <- data$M_site
@@ -141,26 +189,64 @@ fitModel <- function(data,
     a_theta0 <- priors$a_theta0
     b_theta0 <- priors$b_theta0
     
-    # set lambda prior
+    # standard priors
     {
-      if(is.null(lambda_prior)){
-        lambda_prior <- apply(y, 3, function(x){
-          log(mean(x[x > quantile(x[x > 0], probs = c(0.1), na.rm = T)], na.rm = T))
-        })
-      }
+      a_theta0 <- 1
+      b_theta0 <- 50
+      
+      a_p11 <- 20
+      b_p11 <- 1
+      
+      a_p10 <- 1
+      b_p10 <- 100
+      
+      lambda_Y <- 1
+      
+      a_sigma <- 3
+      b_sigma <- 2
+      
+      sigma_beta <- 1
+      
+      sigma_mu <- 1
+      sigma_gamma <- 1
+      
+      sigma_u <- 1
+      
+      sigma_beta_theta <- 1
+      
+      sigma_lambda <- 3
+      
+      lambda_prior <- apply(y, 3, function(x){
+        log(mean(x[x > quantile(x[x > 0], probs = c(0.1), na.rm = T)], na.rm = T))
+      })
+      
+      lambda_Y <- 1
+      a_tau <- 1
+      b_tau <- 1
+      
+      
+    }
+    
+    if(!is.null(priors)){
+      
+      sapply(seq_along(priors), function(i){
+        val <- priors[[i]]
+        namevar <- names(priors)[i]
+        
+        eval(parse(text = paste0(namevar," <<- ",val)))
+      })
+      
     }
     
     if(jointSpecies){
-      lambda_Y <- 1
+      
       Tau_Priors <- list("lambda_Y" = lambda_Y)
     } else {
-      
-      a_tau <- 1
-      b_tau <- 1
       
       Tau_Priors <- list("a_tau" = a_tau,
                          "b_tau" = rep(1, S))
     }
+    
   }
   
   # params to update
@@ -867,8 +953,6 @@ fitModel <- function(data,
     }
     
     for (iter in 1:(nburn + nthin * niter)) {
-      # print(apply(gamma, 2, mean))
-      # print(logz[,2])
       print(lambda)
       if(iter <= nburn){
         print(paste0("Chain = ",chain," - Burn-in Iteration = ",iter))
@@ -882,11 +966,10 @@ fitModel <- function(data,
         
         list_lambda <- update_lambda_CP(beta0, beta_z, logz, 
                                         mu, lambda, v, u, lambda_ijk, r_nb,
-                                        c_imk, delta, gamma, beta_theta, 
-                                        M_site, 
-                                        sigma_beta, sigma_mu,
+                                        c_imk, delta, gamma, X_w, beta_theta, 
+                                        M_site, sigma_beta, sigma_mu,
                                         lambda_prior, sigma_lambda,
-                                        S_star)
+                                        S_star, emptyTubes)
         lambda <- list_lambda$lambda
         beta0 <- list_lambda$beta0
         mu <- list_lambda$mu
@@ -1425,56 +1508,4 @@ fitModel <- function(data,
   )
   
   output <- list("params_output" = params_output)
-}
-
-
-runEDNA <- function(data0,
-                    priors,
-                    jointSpecies,
-                    trueParams,
-                    paramsUpdate = list(updateAll = T,
-                                        params = NULL,
-                                        correct = NULL),
-                    MCMCparams,
-                    paramsToSave = list(
-                      "lambda" = T,
-                      "beta0" = T,
-                      "mu" = T,
-                      "beta_z" = T,
-                      "logz" = T,
-                      "u" = T,
-                      "v" = F,
-                      "beta_w" = T,
-                      "Tau" = T,
-                      "sigma" = T,
-                      "beta_theta" = T,
-                      "theta" = F,
-                      "csi" = T,
-                      "delta" = F,
-                      "gamma" = F,
-                      "r" = T,
-                      "p11" = T,
-                      "p10" = T,
-                      "p10" = T,
-                      "mutilde" = T,
-                      "c_imk" = F,
-                      "mu0" = T,
-                      "n0" = T,
-                      "pi0" = T,
-                      "eta" = F
-                    )){
-  
-  data <- data0$data
-  data_spike <- data0$data_spike
-  
-  data <- cleanData(data, data_spike)
-  
-  modelResults <- fitModel(data,
-                           priors,
-                           jointSpecies,
-                           trueParams,
-                           paramsUpdate,
-                           MCMCparams)
-  
-  modelResults
 }

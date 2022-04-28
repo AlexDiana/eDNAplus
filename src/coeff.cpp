@@ -889,7 +889,7 @@ arma::mat update_betaw_cpp(arma::mat beta_w, arma::mat v, arma::mat delta,
     for(int l = 0; l < r_idx; l++){
       Xw_long2.row(l) = Xw_long.row(l);
       y_long2[l] = y_long[l];
-      Xy_long2_colsums += Xw_long2.row(l) * y_long[l];
+      Xy_long2_colsums += arma::trans(Xw_long2.row(l)) * y_long[l];
     }
     
     arma::mat r_longtrlong = arma::trans(Xw_long2) * Xw_long2;
@@ -898,7 +898,7 @@ arma::mat update_betaw_cpp(arma::mat beta_w, arma::mat v, arma::mat delta,
     arma::vec mu_beta = Xy_long2_colsums / pow(sigma[j],2);
     
     arma::mat Lambdabeta = arma::inv(Lambda_beta);
-    arma::vec mean_beta = mu_beta * Lambdabeta;
+    arma::vec mean_beta = Lambdabeta * mu_beta;
     
     arma::vec betaw_j = mvrnormArma(mean_beta, Lambdabeta);
     beta_w.col(j) = arma::conv_to<arma::colvec>::from(betaw_j);

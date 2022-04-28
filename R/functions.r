@@ -10,11 +10,10 @@ logistic <- function(x){
 
 update_lambda_CP <- function(beta0, beta_z, logz, 
                              mu, lambda, v, u, lambda_ijk, r_nb,
-                             c_imk, delta, gamma, beta_theta, 
-                             M_site, 
-                             sigma_beta, sigma_mu,
+                             c_imk, delta, gamma, X_w, beta_theta, 
+                             M_site, sigma_beta, sigma_mu,
                              lambda_prior, sigma_lambda,
-                             S_star){
+                             S_star, emptyTubes){
   
   df_t  = 3
   
@@ -134,7 +133,7 @@ update_lambda_CP <- function(beta0, beta_z, logz,
     
     lambda_gig <- a_lambda_prior - length(PCRcounts) * r_nb[S + j]
     
-    lambda[S + j] <- log(rgig(1, lambda = lambda_gig, chi = 2 * chi_gig, psi = 2 * psi_gig ))
+    lambda[S + j] <- log(GIGrvg::rgig(1, lambda = lambda_gig, chi = 2 * chi_gig, psi = 2 * psi_gig ))
     
   }
   
