@@ -953,7 +953,7 @@ fitModel <- function(data,
     }
     
     for (iter in 1:(nburn + nthin * niter)) {
-      print(lambda)
+      # print(lambda)
       if(iter <= nburn){
         print(paste0("Chain = ",chain," - Burn-in Iteration = ",iter))
       } else {

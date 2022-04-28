@@ -14,5 +14,6 @@ RoxygenNote: 7.1.2
 Imports: 
   Rcpp (>= 1.0.7),
   GIGrvg,
+  ggplot2,
   MASS
 LinkingTo: Rcpp, RcppArmadillo

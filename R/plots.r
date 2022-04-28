@@ -66,7 +66,7 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
   
   namesSpecies <- OTUnames[orderSignificantSpecies]
   
-  ggplot(data = NULL, aes(x = factorSub,
+  ggplot2::ggplot(data = NULL, ggplot2::aes(x = factorSub,
                           y = beta_CI_subset[2,],
                           ymin = beta_CI_subset[1,],
                           ymax = beta_CI_subset[3,])) + geom_errorbar() + 
@@ -75,11 +75,11 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
                    axis.text = ggplot2::element_text(size = 9, face = "bold", angle = 0),
                    panel.grid.major = ggplot2::element_line(colour="grey", size=0.15),
                    panel.background = ggplot2::element_rect(fill = "white", color = "black")) +
-    geom_hline(aes(yintercept = 0), color = "red") + 
-    scale_x_discrete(name = "Species", breaks = subsetSpecies,
+    ggplot2::geom_hline(aes(yintercept = 0), color = "red") + 
+    ggplot2::scale_x_discrete(name = "Species", breaks = subsetSpecies,
                      labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
-    scale_y_continuous(name = "Elevation") + coord_flip()
+    ggplot2::scale_y_continuous(name = "Elevation") + ggplot2::coord_flip()
   
 }
