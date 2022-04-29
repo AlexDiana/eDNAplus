@@ -701,46 +701,6 @@ fitModel <- function(data,
         mu <- rep(0, S)
       }
       
-      if(correctV){
-        v <- v_true
-      } else
-      {
-        v <- matrix(0, sum(M_site) + emptyTubes, S)
-        if(S_star > 0){
-          v <- cbind(v, v_spikes)
-        }
-      }
-      
-      if(correctU){
-        u <- u_true
-      } else
-      {
-        u <- matrix(0, sum(M_site) + emptyTubes, max(K))
-      }
-      
-      if(correctR){
-        r_nb <- r_true
-      } else
-      {
-        r_nb <- rpois(S + S_star, 100)
-      }
-      
-      if(correctBeta_w){
-        beta_w <- beta_w_true
-      } else
-      {
-        beta_w <- matrix(0, ncov_w, S)
-      }
-      
-      if(correctBeta_z){
-        beta0 <- beta0_true
-        beta_z <- beta_z_true
-      } else
-      {
-        beta0 <- rep(0, S)
-        beta_z <- matrix(0, nrow = ncov_z, ncol = S)
-      }
-      
       if(correctDeltaGammaC){
         c_imk <- c_imk_true
         
@@ -811,6 +771,56 @@ fitModel <- function(data,
           gamma[sum(M_site) + m,] <- 0
         }
         
+      }
+      
+      if(correctV){
+        v <- v_true
+      } else
+      {
+        v <- matrix(NA, sum(M_site) + emptyTubes, S)
+        for (i in 1:n) {
+          for (m in 1:M_site[i]) {
+            for (j in 1:S) {
+              if(delta[m + sum(M_site[seq_len(i-1)]),j] == 1 | 
+                 gamma[m + sum(M_site[seq_len(i-1)]),j] == 1){
+                v[m + sum(M_site[seq_len(i-1)]),j] <- 0
+              } 
+            }
+          }
+        }
+        if(S_star > 0){
+          v <- cbind(v, v_spikes)
+        }
+      }
+      
+      if(correctU){
+        u <- u_true
+      } else
+      {
+        u <- matrix(0, sum(M_site) + emptyTubes, max(K))
+      }
+      
+      if(correctR){
+        r_nb <- r_true
+      } else
+      {
+        r_nb <- rpois(S + S_star, 100)
+      }
+      
+      if(correctBeta_w){
+        beta_w <- beta_w_true
+      } else
+      {
+        beta_w <- matrix(0, ncov_w, S)
+      }
+      
+      if(correctBeta_z){
+        beta0 <- beta0_true
+        beta_z <- beta_z_true
+      } else
+      {
+        beta0 <- rep(0, S)
+        beta_z <- matrix(0, nrow = ncov_z, ncol = S)
       }
       
       if(correctLambda0){
@@ -953,7 +963,7 @@ fitModel <- function(data,
     }
     
     for (iter in 1:(nburn + nthin * niter)) {
-      # print(lambda)
+      print(min(lambda))
       if(iter <= nburn){
         print(paste0("Chain = ",chain," - Burn-in Iteration = ",iter))
       } else {
