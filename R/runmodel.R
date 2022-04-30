@@ -1,6 +1,53 @@
 # GENERAL -----------------------------------------------------------------
 
-
+#' Model fitting
+#' 
+#' @description This function fits the occupancy model of Diana et al. (2021). 
+#' Note that in the following the parameters are described with the notations used in the paper.
+#' 
+#' @param data The data frame containing the data.
+#' @param index_year The index of the column containing the year variable.
+#' @param index_site The index of the column containing the site variable.
+#' @param index_occ The index of the column containing the detections.
+#' @param index_spatial_x The index of the x coordinate of the site.
+#' @param index_spatial_y The index of the y coordinate of the site. 
+#' @param covariates_psi_text Indexes of the column of the occupancy probability. To be separated by a comma, eg. "5,6,8". Set to "0" if no covariate is available
+#' @param covariates_p_text Indexes of the column of the detection probability. 
+#' @param prior_psi Prior mean for the occupancy probability
+#' @param sigma_psi Standard deviation for the prior on the occupancy probability
+#' @param prior_p Prior mean for the detection probability
+#' @param sigma_p Standard deviation for the prior on the detection probability
+#' @param usingYearDetProb Should the model include year-specific detection probabilities (as opposed to a constant one)?
+#' @param usingSpatial Should the model include the auto-correlated spatial effects?
+#' @param gridStep Step of the grid to use for the approximation of the auto-correlated spatial effects. Use \code{\link{buildSpatialGrid}} to show the grid for a value of \code{gridStep}.
+#' @param storeRE Should the model store the site-specific independent random effects for each iteration (instead of just their mean across all chain)? Not suggested if the number of sites is greater than 1000.
+#' @param nchain Number of chains.
+#' @param nburn Number of burn-in iterations.
+#' @param niter Number of (non burn-in) iterations.
+#' @param verbose Should the progress of the MCMC be printed?.
+#' @param computeGOF Should the model perform calculations of the goodness of fit?
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return 
+#' A list with components:
+#' 
+#' \itemize{
+#' 
+#'  \item \code{params_output} A list with the MCMC output of each parameter specified in the \code{paramesToSave} parameter
+#'      
+#'  
+#'  }
+#' 
+#' @examples
+#' 
+#' modelResults <- runEDNA(data, 
+#'                         priors,
+#'                         jointSpecies = T,
+#'                         MCMCparams)  
+#' 
 runEDNA <- function(data0,
                     priors = NULL,
                     jointSpecies = F,
