@@ -159,6 +159,200 @@ update_lambda_CP <- function(beta0, beta_z, logz,
   
 }
 
+update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz, 
+                             mu, lambda, v, u, lambda_ijk, r_nb,
+                             c_imk, delta, gamma, X_w, beta_theta, 
+                             M_site, tau, sigma_mu,
+                             lambda_prior, sigma_lambda,
+                             S_star, emptyTubes){
+  
+  df_t  = 3
+  
+  S <- length(mu)
+  
+  list_CP_cpp <- convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, 
+                                   delta, gamma, beta_theta, M_site, S_star,
+                                   emptyTubes)
+  beta_bar <- list_CP_cpp$beta_bar
+  mu_bar <- list_CP_cpp$mu_bar
+  logz_bar <- list_CP_cpp$logz_bar
+  v_bar <- list_CP_cpp$v_bar
+  beta_theta_bar <- list_CP_cpp$beta_theta_bar
+  
+  # update paramters
+  
+  for (j in 1:S) {
+    
+    # nonPCRcounts <- as.vector(y[,,j])[as.vector(c_imk[,,j]) == 2]
+    # nonPCRcounts <- nonPCRcounts[!is.na(nonPCRcounts)]
+    # a <- length(nonPCRcounts) * lambdatilde[j]
+    
+    Xwbetatheta <- beta_theta[j,1] + X_w %*% beta_theta[j,-c(1,2)]
+    
+    Xbetalogz <- X_z %*% beta_z[,j]
+    
+    X_l <- rep(logz_bar[,j], M_site)
+    
+    optim_fun <- function(x){
+      -logdpost_cpp_beta0(x, X_l, 
+                    beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                    logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                    sigma_lambda)
+    }
+    
+    # lambda_star <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10), tol = .001)$minimum
+    # try two mins
+    # optim1 <- 
+    # lambda_star_1 <- optimize(optim_fun, c(lambda[j] - 1, lambda[j] + 1), tol = .001)$minimum
+    # lambda_obj_1 <- optimize(optim_fun, c(lambda[j] - 1, lambda[j] + 1), tol = .001)$objective
+    # lambda_star_2 <- optimize(optim_fun, c(lambda[j] - 4, lambda[j] + 4), tol = .01)$minimum
+    # lambda_obj_2 <- optimize(optim_fun, c(lambda[j] - 4, lambda[j] + 4), tol = .01)$objective
+    # lambda_star_3 <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10), tol = .01)$minimum
+    # lambda_obj_3 <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10), tol = .01)$objective
+    # if(lambda_obj_1 < lambda_obj_2 & lambda_obj_1 < lambda_obj_3){
+    #   lambda_star <- lambda_star_1
+    # } else if(lambda_obj_2 < lambda_obj_1 & lambda_obj_2 < lambda_obj_3){
+    #   lambda_star <- lambda_star_2
+    # } else {
+    #   lambda_star <- lambda_star_3
+    # }
+    lambda_star <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10))$minimum
+    
+    sd_star <-  1 / sqrt(-der2_logdpost_cpp_beta0(lambda_star, X_l, 
+                                            beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                            logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                            sigma_lambda))
+    
+    # lambda_grid <- seq(lambda[j] - 3, lambda[j] + 3, length.out = 100)
+    # # lambda_grid <- seq(lambda_star - 01, lambda_star + 01, length.out = 100)
+    # y_grid <- sapply(lambda_grid, function(x){
+    #   # log(dt2(x, lambda_star, sd_star, df_t))
+    #   # optim_fun(x)
+    #   logdpost_cpp_beta0(x, X_l,
+    #                      beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+    #                      logz_bar[,j], sigma_beta, mu_bar[j], sigma_mu, lambda_prior[j], 
+    #                      sigma_lambda)
+    # })
+    # # 
+    # qplot(lambda_grid, y_grid) +
+    # qplot(lambda_grid, exp(y_grid - max(y_grid)) / sum(exp(y_grid - max(y_grid)))) +
+    #   geom_vline(aes(xintercept = lambda_true[j])) +
+    #   geom_vline(aes(xintercept = lambda[j]), color = "red") +
+    #   geom_vline(aes(xintercept = lambda_star), color = "green")
+    
+    lambda_new <- rt2(lambda_star, sd_star, 3)
+    
+    logproposal_ratio <-  log(dt2(lambda[j], lambda_star, sd_star, df_t)) - 
+      log(dt2(lambda_new, lambda_star, sd_star, df_t))
+    
+    logposterior <- logdpost_cpp_beta0(lambda[j], X_l, 
+                                 beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                 logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                 sigma_lambda)
+    logposterior_star <- logdpost_cpp_beta0(lambda_new, X_l, 
+                                      beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                      logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                      sigma_lambda)
+    
+    (mh_ratio <- exp(logposterior_star - logposterior + logproposal_ratio))
+    
+    if(runif(1) < mh_ratio){
+      lambda[j] <- lambda_new
+    }
+    
+  }
+  
+  for (j in seq_len(S_star)) {
+    
+    a_lambda_prior <- lambda_prior[S + j]^2 / sigma_lambda^2
+    b_lambda_prior <- lambda_prior[S + j] / sigma_lambda^2
+    
+    # nonPCRcounts <- as.vector(y[,,j])[as.vector(c_imk[,,j]) == 2]
+    # nonPCRcounts <- nonPCRcounts[!is.na(nonPCRcounts)]
+    
+    # psi_gig <- length(nonPCRcounts) * lambdatilde[S + j] + b_lambda_prior
+    psi_gig <- b_lambda_prior
+    
+    PCRcounts <- as.vector(lambda_ijk[,,S + j])[as.vector(c_imk[,,S + j]) == 1]
+    PCRcounts <- PCRcounts[!is.na(PCRcounts)]
+    
+    vpu <- u 
+    vpu_PCR <- as.vector(vpu)[as.vector(c_imk[,,S + j]) == 1]
+    vpu_PCR <- vpu_PCR[!is.na(vpu_PCR)]
+    
+    chi_gig <- sum(PCRcounts * r_nb[S + j] / exp(vpu_PCR)) 
+    
+    lambda_gig <- a_lambda_prior - length(PCRcounts) * r_nb[S + j]
+    
+    lambda[S + j] <- log(GIGrvg::rgig(1, lambda = lambda_gig, chi = 2 * chi_gig, psi = 2 * psi_gig ))
+    
+  }
+  
+  list_SP_cpp = convertCPtoSP_cpp(beta_bar,
+                                  lambda, mu_bar,
+                                  logz_bar, v_bar,
+                                  delta,
+                                  gamma,
+                                  beta_theta_bar,
+                                  M_site, S_star,
+                                  emptyTubes)
+  
+  beta0 <- rep(0, S)
+  mu <- list_SP_cpp$mu
+  logz <- list_SP_cpp$logz
+  v[,1:S] <- list_SP_cpp$v[,1:S]
+  
+  list("lambda" = lambda,
+       "beta0" = beta0,
+       "mu" = mu,
+       "v" = v,
+       "logz" = logz)
+  
+}
+
+update_lambda_NP <- function(lambda_ijk, c_imk, mu,
+                             r_nb, v, u,
+                             lambda_prior, sigma_lambda){
+  
+  S <- length(mu)
+  
+  # update paramters
+  
+  for (j in seq_len(S)) {
+    
+    mean_lambda <- lambda_prior[j]
+    mean_explambda <- exp(mean_lambda + sigma_lambda^2 / 2)
+    var_explambda <- exp(sigma_lambda^2 / 2 - 1) *  exp(2 * mean_lambda + sigma_lambda^2)
+    a_lambda_prior <- mean_explambda^2 / var_explambda
+    b_lambda_prior <- mean_explambda / var_explambda
+    # a_lambda_prior <- exp(lambda_prior)[j]^2 / sigma_lambda^2
+    # b_lambda_prior <- exp(lambda_prior)[j] / sigma_lambda^2
+    
+    # nonPCRcounts <- as.vector(y[,,j])[as.vector(c_imk[,,j]) == 2]
+    # nonPCRcounts <- nonPCRcounts[!is.na(nonPCRcounts)]
+    # lengthnonPCRcounts <- sum(as.vector(c_imk[,,j]) == 2)
+    
+    # psi_gig <- length(nonPCRcounts) + b_lambda_prior
+    psi_gig <- b_lambda_prior
+    
+    PCRcounts <- as.vector(lambda_ijk[,,j])[as.vector(c_imk[,,j]) == 1]
+    PCRcounts <- PCRcounts[!is.na(PCRcounts)]
+    
+    vpu <- u + matrix(v[,j], nrow = sum(M_site) + emptyTubes, ncol = max(K), byrow = F) 
+    vpu_PCR <- as.vector(vpu)[as.vector(c_imk[,,j]) == 1]
+    vpu_PCR <- vpu_PCR[!is.na(vpu_PCR)]
+    
+    chi_gig <- sum(PCRcounts * r_nb[j] / exp(vpu_PCR)) 
+    
+    lambda_gig <- a_lambda_prior - length(PCRcounts) * r_nb[j]
+    
+    lambda[j] <- log(rgig(lambda = lambda_gig, chi = 2 * chi_gig, psi = 2 * psi_gig))
+    
+  }
+  
+  lambda
+}
+
 # LAMBDA 0 ----------------------------------------------------------------
 
 update_lambda0_mixt <- function(y, c_imk, mu0, n0, sd_mu0 = .05, sd_n0 = .025){

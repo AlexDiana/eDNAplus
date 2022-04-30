@@ -5,28 +5,20 @@
 #' @description This function fits the occupancy model of Diana et al. (2021). 
 #' Note that in the following the parameters are described with the notations used in the paper.
 #' 
-#' @param data The data frame containing the data.
-#' @param index_year The index of the column containing the year variable.
-#' @param index_site The index of the column containing the site variable.
-#' @param index_occ The index of the column containing the detections.
-#' @param index_spatial_x The index of the x coordinate of the site.
-#' @param index_spatial_y The index of the y coordinate of the site. 
-#' @param covariates_psi_text Indexes of the column of the occupancy probability. To be separated by a comma, eg. "5,6,8". Set to "0" if no covariate is available
-#' @param covariates_p_text Indexes of the column of the detection probability. 
-#' @param prior_psi Prior mean for the occupancy probability
-#' @param sigma_psi Standard deviation for the prior on the occupancy probability
-#' @param prior_p Prior mean for the detection probability
-#' @param sigma_p Standard deviation for the prior on the detection probability
-#' @param usingYearDetProb Should the model include year-specific detection probabilities (as opposed to a constant one)?
-#' @param usingSpatial Should the model include the auto-correlated spatial effects?
-#' @param gridStep Step of the grid to use for the approximation of the auto-correlated spatial effects. Use \code{\link{buildSpatialGrid}} to show the grid for a value of \code{gridStep}.
-#' @param storeRE Should the model store the site-specific independent random effects for each iteration (instead of just their mean across all chain)? Not suggested if the number of sites is greater than 1000.
-#' @param nchain Number of chains.
-#' @param nburn Number of burn-in iterations.
-#' @param niter Number of (non burn-in) iterations.
-#' @param verbose Should the progress of the MCMC be printed?.
-#' @param computeGOF Should the model perform calculations of the goodness of fit?
+#' @param data A list with components 
+#'  \itemize{
 #' 
+#'  \item \code{y} An array of dimension n \times K \times (S + Star), where 
+#'      
+#'  
+#'  }
+#'  
+#' @param priors List of prior parameters. If not specified, default values are used.
+#' @param jointSpecies Does the model include species correlation?
+#' @param paramsUpdate The index of the column containing the detections.
+#' @param MCMCparams The index of the x coordinate of the site.
+#' @param paramsToSave The index of the y coordinate of the site. 
+
 #' @importFrom magrittr %>%
 #' 
 #' @export
@@ -306,7 +298,7 @@ fitModel <- function(data,
     if(paramsUpdate$updateAll){
       
       updateLambda_CP <- T; correctLambda <- F
-      updateLambda_NP <- F; correctLambda <- F
+      updateLambda_NP <- T; correctLambda <- F
       
       updateBeta_w <- T; correctBeta_w <- F
       updateBeta_z <- T; correctBeta_z <- F
@@ -340,7 +332,7 @@ fitModel <- function(data,
       paramsToUpdate <- paramsUpdate$params
       
       updateLambda_CP <- paramsToUpdate$lambda; correctLambda <- !updateLambda_CP
-      updateLambda_NP <- F
+      updateLambda_NP <- paramsToUpdate$lambda; correctLambda <- !updateLambda_CP
       
       updateL <- paramsToUpdate$logz; correctL <- !updateL
       updateMu <- paramsToUpdate$mu; correctMu <- !updateMu
@@ -1027,12 +1019,27 @@ fitModel <- function(data,
       
       if(updateLambda_CP){
         
-        list_lambda <- update_lambda_CP(beta0, beta_z, logz, 
-                                        mu, lambda, v, u, lambda_ijk, r_nb,
-                                        c_imk, delta, gamma, X_w, beta_theta, 
-                                        M_site, sigma_beta, sigma_mu,
-                                        lambda_prior, sigma_lambda,
-                                        S_star, emptyTubes)
+        if(beta0equal0){
+          if(jointSpecies){
+            tau <- diag(sqrt(Tau_params$Sigma))
+          } else {
+            tau <- Tau_params$tau
+          }
+          list_lambda <- update_lambda_CP_beta0(beta0, beta_z, X_z, logz, 
+                                                mu, lambda, v, u, lambda_ijk, r_nb,
+                                                c_imk, delta, gamma, X_w, beta_theta, 
+                                                M_site, tau, sigma_mu,
+                                                lambda_prior, sigma_lambda,
+                                                S_star, emptyTubes)
+        } else {
+          list_lambda <- update_lambda_CP(beta0, beta_z, logz, 
+                                          mu, lambda, v, u, lambda_ijk, r_nb,
+                                          c_imk, delta, gamma, X_w, beta_theta, 
+                                          M_site, sigma_beta, sigma_mu,
+                                          lambda_prior, sigma_lambda,
+                                          S_star, emptyTubes)
+          
+        }
         lambda <- list_lambda$lambda
         beta0 <- list_lambda$beta0
         mu <- list_lambda$mu

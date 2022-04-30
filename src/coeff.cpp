@@ -78,9 +78,7 @@ double dmt_cpp(arma::vec x, double nu, arma::vec mu, arma::mat Sigma, bool retur
   }
 }
 
-
 //
-
 
 double aterm(int n, double x, double t) {
   double f = 0;
@@ -2596,6 +2594,47 @@ double logdpost_cpp(double lambda,
   
 }
 
+// [[Rcpp::export]]
+double logdpost_cpp_beta0(double lambda,
+                          NumericVector X_l,
+                          double betatheta1,
+                          NumericVector Xwbetatheta,
+                          NumericVector Xbetalogz,
+                          arma::vec delta,
+                          NumericVector logz_barj,
+                          double tau,
+                          double mu_barj,
+                          double sigma_mu,
+                          double lambda_priorj,
+                          double sigma_lambda){
+  
+  NumericVector lmlambda = X_l - lambda;
+  
+  NumericVector Xbeta = lmlambda * betatheta1  + Xwbetatheta;
+  
+  double sum1 = 
+    R::dnorm(mu_barj, lambda, sigma_mu, 1) +
+    R::dnorm(lambda_priorj, lambda, sigma_lambda, 1);//sum(dunif(nonPCRcounts, 0, exp(lambda), 1)) + // double sum1 = sum(dpois(nonPCRcounts, exp(lambda) * lambdatilde_j, 1)) +
+  // R::dnorm(beta_barj, lambda, sigma_beta, 1) +
+  
+  // Rcout << sum1 << std::endl;
+  double sumlogz = 0;
+  for(int i = 0; i < Xbetalogz.size(); i++){
+    sumlogz += R::dnorm(logz_barj[i] - Xbetalogz[i], lambda, tau, 1);
+  }
+  // Rcout << sumlogz << std::endl;
+  double sumdbern = 0;
+  for(int i = 0; i < Xbeta.size(); i++){
+    sumdbern += (- log(1 + exp(-Xbeta[i])));
+    if(delta[i] == 0){
+      sumdbern += (- Xbeta[i]);
+    }
+  }
+  // Rcout << sumdbern << std::endl;
+  return(sum1 + sumlogz + sumdbern);
+  
+}
+
 // // [[Rcpp::export]]
 // double logdpost_cpp(double lambda,
 //                     NumericVector X_l,
@@ -2685,6 +2724,50 @@ double der2_logdpost_cpp(double lambda,
   NumericVector lminuslambda = X_l - lambda;
   
   // NumericVector Xbeta = pmax(pmin(lminuslambda, 10),-10);
+  
+  double sumdbern = 0;
+  for(int i = 0; i < lminuslambda.size(); i++){
+    sumdbern += ( - beta_theta1 * beta_theta1) * exp(- lminuslambda[i] * beta_theta1 - Xwbetatheta[i]) /
+      pow(1 + exp(- lminuslambda[i] * beta_theta1 - Xwbetatheta[i]), 2);
+    // if(delta[i] == 1){
+    //   sumdbern += der2_term1(lminuslambda[i], beta_theta1, Xwbetatheta[i]);
+    // } else {
+    //   sumdbern += der2_term2(lminuslambda[i], beta_theta1, Xwbetatheta[i]);
+    // }
+  }
+  
+  return(sum1 + sumdbern);
+  
+}
+
+// [[Rcpp::export]]
+double der2_logdpost_cpp_beta0(double lambda,
+                               NumericVector X_l,
+                               double beta_theta1,
+                               NumericVector Xwbetatheta,
+                               NumericVector Xbetalogz,
+                               arma::vec delta,
+                               NumericVector logz_barj,
+                               double tau,
+                               double mu_barj,
+                               double sigma_mu,
+                               double lambda_priorj,
+                               double sigma_lambda){
+  
+  // double sum1 = - exp(lambda) * lambdatilde_j * nonPCRcounts.size() + 
+  double sum1 = 
+    // (- 1 / (sigma_beta * sigma_beta)) +
+    (- 1 / (sigma_mu * sigma_mu)) +
+    (- 1 / (sigma_lambda * sigma_lambda));
+  
+  NumericVector lminuslambda = X_l - lambda;
+  
+  // NumericVector Xbeta = pmax(pmin(lminuslambda, 10),-10);
+  
+  double sumlogz = 0;
+  for(int i = 0; i < Xbetalogz.size(); i++){
+    sumlogz += (- 1 / (tau * tau));
+  }
   
   double sumdbern = 0;
   for(int i = 0; i < lminuslambda.size(); i++){
