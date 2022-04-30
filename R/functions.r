@@ -273,67 +273,90 @@ update_Tau <- function(X_z, logz, beta0, beta_z,
 
 # BETA --------------------------------------------------------------------
 
-update_betaz_CP <- function(beta0, beta_z, logz, tau, X_z, sigma_beta){
+update_betaz_CP <- function(beta0, beta_z, logz, tau, X_z, sigma_beta, updatebeta0){
   
   ncov_z <- ncol(X_z)
   
-  S <- length(beta0)
-  
-  # X_beta <- X_z
-  X_beta <- cbind(1, X_z)
-  
-  {
-    tXX <- t(X_beta) %*% X_beta
+  if(ncov_z > 0 | updatebeta0){
     
-    for (j in 1:S) {
-      
-      Lambda_beta <- (tXX / tau[j]^2) + (diag(1, nrow = ncov_z + 1) / sigma_beta^2)
-      
-      mu_beta_x <- matrix(apply(X_beta, 2, function(x){
-        x * logz[,j]
-      }) / tau[j]^2, nrow(X_beta), 1 + ncov_z)
-      
-      mu_beta <- apply(mu_beta_x, 2, sum)
-      b_prior <- c(0, rep(0, ncov_z))
-      
-      mu_beta <- mu_beta + b_prior
-      
-      beta_bar_beta <- mvrnorm(1, solve(Lambda_beta) %*% mu_beta, solve(Lambda_beta))
-      
-      beta0[j] <- beta_bar_beta[1]
-      beta_z[,j] <- beta_bar_beta[-1]
-      
+    S <- length(beta0)
+    
+    if(updatebeta0){
+      X_beta <- cbind(1, X_z)
+    } else {
+      X_beta <- X_z
     }
+    
+    {
+      tXX <- t(X_beta) %*% X_beta
+      
+      for (j in 1:S) {
+        
+        Lambda_beta <- (tXX / tau[j]^2) + (diag(1, nrow = ncov_z + updatebeta0) / sigma_beta^2)
+        
+        mu_beta_x <- matrix(apply(X_beta, 2, function(x){
+          x * logz[,j]
+        }) / tau[j]^2, nrow(X_beta), updatebeta0 + ncov_z)
+        
+        mu_beta <- apply(mu_beta_x, 2, sum)
+        b_prior <- rep(0, ncov_z)
+        if(updatebeta0){
+          b_prior <- c(0, b_prior)
+        }
+        
+        mu_beta <- mu_beta + b_prior
+        
+        beta_bar_beta <- mvrnorm(1, solve(Lambda_beta) %*% mu_beta, solve(Lambda_beta))
+        
+        if(updatebeta0){
+          beta0[j] <- beta_bar_beta[1]
+          beta_z[,j] <- beta_bar_beta[-1]  
+        } else {
+          beta_z[,j] <- beta_bar_beta
+        }
+        
+      }
+    }
+    
   }
   
   list("beta0" = beta0,
        "beta_z" = beta_z)
 }
 
-update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta){
+update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, updatebeta0){
   
-  {
-    ncov_z <- ncol(X_z)
-    S <- ncol(Tau)
+  ncov_z <- ncol(X_z)
+  S <- ncol(Tau)
+  
+  if(ncov_z > 0 | updatebeta0){
     
-    X_beta <- cbind(1, X_z)
+    if(updatebeta0){
+      X_beta <- cbind(1, X_z)
+    } else {
+      X_beta <- cbind(1, X_z)
+    }
     l_noempty <- logz
     
     tXX <- t(X_beta) %*% X_beta
     tXl <- t(X_beta) %*% logz
     
-    prior_mean <- matrix(0, nrow = ncov_z + 1, ncol = S)
-    prior_mean[1,] <- rep(0, S)
+    prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
+    # prior_mean[1,] <- rep(0, S)
     
     M_term <- tXl + prior_mean
-    U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + 1))
+    U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
     post_U <- solve(U_term)
     post_M <- post_U %*% M_term
     
     beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
     
-    beta0 <- as.matrix(beta_bar_beta[1,])
-    beta_z <- as.matrix(beta_bar_beta[-1,,drop = F])
+    if(updatebeta0){
+      beta0 <- as.matrix(beta_bar_beta[1,])
+      beta_z <- as.matrix(beta_bar_beta[-1,,drop = F])  
+    } else {
+      beta_z <- as.matrix(beta_bar_beta)
+    }
     
   }
   

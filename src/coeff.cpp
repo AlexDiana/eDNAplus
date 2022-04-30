@@ -677,21 +677,28 @@ arma::mat createXMatrix(arma::vec M_site,
                         int ncov_w, 
                         int j,
                         arma::mat& logz,
-                        arma::mat& X_w){
+                        arma::mat& X_w,
+                        bool updateBetaTheta0){
   
   int n = M_site.size();
   
-  arma::mat X = arma::ones(sum(M_site), 1 + ncov_w);
+  arma::mat X = arma::ones(sum(M_site), updateBetaTheta0 + 1 + ncov_w);
   
   int l = 0;
   for(int i = 0; i < n; i++){
     
     for (int m = 0; m < M_site[i]; m++) {
       
-      X(l, 0) = logz(i, j);
+      int idx = 0;
+      if(updateBetaTheta0){
+        X(l, 0) = 1;
+        idx = 1;
+      }
+      
+      X(l, idx + 0) = logz(i, j);
       
       for(int cov_w = 0; cov_w < ncov_w; cov_w++){
-        X(l, 1 + cov_w) = X_w(l, cov_w);
+        X(l, idx + 1 + cov_w) = X_w(l, cov_w);
       }
       
       l++;
@@ -742,6 +749,7 @@ List update_betatheta11_cpp(arma::mat logz,
                             arma::mat theta11, arma::mat delta, 
                             arma::mat X_w, arma::vec M_site, 
                             arma::vec b_theta11, arma::mat B_theta11,
+                            bool updateBetaTheta0,
                             bool updateBetaTheta1){
   
   int S = logz.n_cols;
@@ -753,10 +761,16 @@ List update_betatheta11_cpp(arma::mat logz,
     // arma::mat X_long = arma::zeros(sum(M_site), 2 + ncov_w);
     // arma::vec y_long = arma::zeros(sum(M_site));
     
-    arma::vec beta_theta11_current = arma::zeros(1 + ncov_w);
-    beta_theta11_current[0] = beta_theta11(j, 1);
+    arma::vec beta_theta11_current = arma::zeros(updateBetaTheta0 + 1 + ncov_w);
+    int idx = 0;
+    if(updateBetaTheta0){
+      beta_theta11_current[0] = beta_theta11(j, 0);
+      idx = 1;
+    }
+    
+    beta_theta11_current[idx + 0] = beta_theta11(j, 1);
     for(int cov_w = 0; cov_w < ncov_w; cov_w++){
-      beta_theta11_current(cov_w + 1) = beta_theta11(j, cov_w + 2);
+      beta_theta11_current(idx + 1 + cov_w) = beta_theta11(j, 2 + cov_w);
     }
     // arma::vec beta_theta11_current = arma::conv_to<arma::vec>::from(beta_theta11.row(j));
     
@@ -767,25 +781,30 @@ List update_betatheta11_cpp(arma::mat logz,
                                  ncov_w,
                                  j,
                                  logz,
-                                 X_w);
+                                 X_w,
+                                 updateBetaTheta0);
     arma::vec k2 = y2 - .5;
     
     arma::vec beta_j = sample_betaPG_trunc2(beta_theta11_current, X2, b_theta11,
                                             B_theta11, n2, k2);
     // beta_theta11.row(j) = arma::conv_to<arma::rowvec>::from(beta_j);
-    beta_theta11(j, 1) = beta_j[0];
+    // int idx = 0;
+    
+    if(updateBetaTheta0){
+      beta_theta11(j, 0) = beta_j[0];
+      // idx = 1;
+    }
+    beta_theta11(j, 1) = beta_j[idx + 0];
     for(int cov_w = 0; cov_w < ncov_w; cov_w++){
-      beta_theta11(j, cov_w + 2) = beta_j(cov_w + 1);
+      beta_theta11(j, cov_w + 2) = beta_j(idx + cov_w + 1);
     }
     
     int l = 0;
     for(int i = 0; i < n; i++){
       
-      
-      
       for (int m = 0; m < M_site[i]; m++) {
         
-        double Xbeta = beta_theta11(j, 1) * logz(i, j);
+        double Xbeta = beta_theta11(j, 0) + beta_theta11(j, 1) * logz(i, j);
         for(int cov_w = 0; cov_w < ncov_w; cov_w++){
           Xbeta += beta_theta11(j, 2 + cov_w) * X_w(l, cov_w);
         }

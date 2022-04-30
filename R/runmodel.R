@@ -128,6 +128,8 @@ fitModel <- function(data,
                                          correct = NULL,
                                          trueParams = NULL),
                      MCMCparams,
+                     idConstraints = list(beta0equal0 = T,
+                                          betathetaequal0 = F),
                      paramsToSave = list(
                        "lambda" = T,
                        "beta0" = T,
@@ -251,6 +253,9 @@ fitModel <- function(data,
   
   # params to update
   {
+    beta0equal0 = idConstraints$beta0equal0
+    betathetaequal0 = idConstraints$betathetaequal0
+    
     if(paramsUpdate$updateAll){
       
       updateLambda_CP <- T; correctLambda <- F
@@ -837,7 +842,7 @@ fitModel <- function(data,
       
       if(correctLambdaTilde){
         mu_tilde <- trueParams$mu_tilde_true
-        n_tilde <- trueParams$n_tilde_true
+        n_tilde <- 1000
       } else
       {
         mu_tilde <- 100
@@ -1088,10 +1093,10 @@ fitModel <- function(data,
       if(updateBeta_z){
         if(jointSpecies){
           Tau <- Tau_params$Sigma
-          list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta)
+          list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta, !beta0equal0)
         } else {
           tau <- Tau_params$tau
-          list_beta_z <- update_betaz_CP(beta0, beta_z, logz, tau, X_z, sigma_beta)
+          list_beta_z <- update_betaz_CP(beta0, beta_z, logz, tau, X_z, sigma_beta, !beta0equal0)
         }
         
         beta0 <- list_beta_z$beta0
@@ -1253,13 +1258,20 @@ fitModel <- function(data,
       
       if(updateBetaTheta){
         
+        b_theta11 <- c(1,rep(0, ncov_w))
+        B_theta11 <- diag(sigma_beta_theta, nrow = as.numeric(!betathetaequal0) + 1 + ncov_w)
+        if(!betathetaequal0){
+          b_theta11 <- c(0, b_theta11)
+        }
+        
         list_beta_theta <- update_betatheta11_cpp(logz,
                                                   beta_theta,
                                                   theta11,
                                                   delta[1:sum(M_site),],
                                                   X_w, M_site,
-                                                  b_theta11 = c(1,rep(0, ncov_w)),
-                                                  B_theta11 = diag(sigma_beta_theta, nrow = 1 + ncov_w),
+                                                  b_theta11,
+                                                  B_theta11,
+                                                  !betathetaequal0,
                                                   F)
         beta_theta <- list_beta_theta$beta_theta
         theta11 <- list_beta_theta$theta11
