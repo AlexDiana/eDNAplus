@@ -1,5 +1,53 @@
 # GENERAL -----------------------------------------------------------------
 
+
+runEDNA <- function(data0,
+                    priors = NULL,
+                    jointSpecies = F,
+                    paramsUpdate = list(updateAll = T,
+                                        params = NULL,
+                                        correct = NULL,
+                                        trueParams = NULL),
+                    MCMCparams,
+                    paramsToSave = list(
+                      "lambda" = T,
+                      "beta0" = T,
+                      "mu" = T,
+                      "beta_z" = T,
+                      "logz" = T,
+                      "u" = T,
+                      "v" = F,
+                      "beta_w" = T,
+                      "Tau" = T,
+                      "sigma" = T,
+                      "beta_theta" = T,
+                      "theta" = F,
+                      "csi" = T,
+                      "delta" = F,
+                      "gamma" = F,
+                      "r" = T,
+                      "p11" = T,
+                      "p10" = T,
+                      "p10" = T,
+                      "mutilde" = T,
+                      "c_imk" = F,
+                      "mu0" = T,
+                      "n0" = T,
+                      "pi0" = T,
+                      "eta" = F
+                    )){
+  
+  data <- cleanData(data0)
+  
+  modelResults <- fitModel(data,
+                           priors,
+                           jointSpecies,
+                           paramsUpdate,
+                           MCMCparams)
+  
+  modelResults
+}
+
 cleanData <- function(data){
   
   PCR_table <- data$PCR_table
@@ -72,61 +120,13 @@ cleanData <- function(data){
   
 }
 
-runEDNA <- function(data0,
-                    priors = NULL,
-                    jointSpecies = F,
-                    trueParams,
-                    paramsUpdate = list(updateAll = T,
-                                        params = NULL,
-                                        correct = NULL),
-                    MCMCparams,
-                    paramsToSave = list(
-                      "lambda" = T,
-                      "beta0" = T,
-                      "mu" = T,
-                      "beta_z" = T,
-                      "logz" = T,
-                      "u" = T,
-                      "v" = F,
-                      "beta_w" = T,
-                      "Tau" = T,
-                      "sigma" = T,
-                      "beta_theta" = T,
-                      "theta" = F,
-                      "csi" = T,
-                      "delta" = F,
-                      "gamma" = F,
-                      "r" = T,
-                      "p11" = T,
-                      "p10" = T,
-                      "p10" = T,
-                      "mutilde" = T,
-                      "c_imk" = F,
-                      "mu0" = T,
-                      "n0" = T,
-                      "pi0" = T,
-                      "eta" = F
-                    )){
-  
-  data <- cleanData(data0)
-  
-  modelResults <- fitModel(data,
-                           priors,
-                           jointSpecies,
-                           trueParams,
-                           paramsUpdate,
-                           MCMCparams)
-  
-  modelResults
-}
-
 fitModel <- function(data,
                      priors = NULL,
                      jointSpecies,
-                     trueParams,
                      paramsUpdate = list(updateAll = T,
                                          params = NULL,
-                                         correct = NULL),
+                                         correct = NULL,
+                                         trueParams = NULL),
                      MCMCparams,
                      paramsToSave = list(
                        "lambda" = T,
@@ -674,10 +674,11 @@ fitModel <- function(data,
     
     # starting values
     {
+      trueParams <- paramsUpdate$trueParams
       
       if(correctLambda){
         
-        lambda <- lambda_true
+        lambda <- trueParams$lambda_true
         
       } else
       {
@@ -687,7 +688,7 @@ fitModel <- function(data,
       
       if(correctL){
         
-        logz <- logz_true
+        logz <- trueParams$logz_true
         
       } else
       {
@@ -695,18 +696,18 @@ fitModel <- function(data,
       }
       
       if(correctMu){
-        mu <- mu_true
+        mu <- trueParams$mu_true
       } else
       {
         mu <- rep(0, S)
       }
       
       if(correctDeltaGammaC){
-        c_imk <- c_imk_true
+        c_imk <- trueParams$c_imk_true
         
-        delta <- delta_true
+        delta <- trueParams$delta_true
         
-        gamma <- gamma_true
+        gamma <- trueParams$gamma_true
       } else
       {
         c_imk <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S + S_star))
@@ -774,7 +775,7 @@ fitModel <- function(data,
       }
       
       if(correctV){
-        v <- v_true
+        v <- trueParams$v_true
       } else
       {
         v <- matrix(NA, sum(M_site) + emptyTubes, S)
@@ -794,29 +795,29 @@ fitModel <- function(data,
       }
       
       if(correctU){
-        u <- u_true
+        u <- trueParams$u_true
       } else
       {
         u <- matrix(0, sum(M_site) + emptyTubes, max(K))
       }
       
       if(correctR){
-        r_nb <- r_true
+        r_nb <- trueParams$r_true
       } else
       {
         r_nb <- rpois(S + S_star, 100)
       }
       
       if(correctBeta_w){
-        beta_w <- beta_w_true
+        beta_w <- trueParams$beta_w_true
       } else
       {
         beta_w <- matrix(0, ncov_w, S)
       }
       
       if(correctBeta_z){
-        beta0 <- beta0_true
-        beta_z <- beta_z_true
+        beta0 <- trueParams$beta0_true
+        beta_z <- trueParams$beta_z_true
       } else
       {
         beta0 <- rep(0, S)
@@ -824,9 +825,9 @@ fitModel <- function(data,
       }
       
       if(correctLambda0){
-        mu0 <- mu0_true
-        n0 <- n0_true
-        pi0 <- pi0_true
+        mu0 <- trueParams$mu0_true
+        n0 <- trueParams$n0_true
+        pi0 <- trueParams$pi0_true
       } else
       {
         mu0 <- 2
@@ -835,8 +836,8 @@ fitModel <- function(data,
       }
       
       if(correctLambdaTilde){
-        mu_tilde <- mu_tilde_true
-        n_tilde <- n_tilde_true
+        mu_tilde <- trueParams$mu_tilde_true
+        n_tilde <- trueParams$n_tilde_true
       } else
       {
         mu_tilde <- 100
@@ -844,7 +845,7 @@ fitModel <- function(data,
       }
       
       if(correctSigma){
-        sigma <- sigma_true
+        sigma <- trueParams$sigma_true
       } else
       {
         sigma <- rep(1, S)
@@ -858,7 +859,7 @@ fitModel <- function(data,
           # lambda_NG <- 1
           # gamma_NG <- 1
           
-          Tau_params <- list("Omega" = Tau_true,
+          Tau_params <- list("Omega" = trueParams$Tau_true,
                              "lambdasq" = matrix(1, nrow = S, ncol = S),
                              "tausq" = 1,
                              "nu" = matrix(1, nrow = S, ncol = S),
@@ -866,7 +867,7 @@ fitModel <- function(data,
                              "Sigma" = solve(Tau_true))
           
         } else {
-          Tau_params <- list("tau" = tau_true)
+          Tau_params <- list("tau" = trueParams$tau_true)
         }
       } else
       {
@@ -890,22 +891,22 @@ fitModel <- function(data,
       }
       
       if(correctP11){
-        p_11 <- p11_true
+        p_11 <- trueParams$p11_true
       } else
       {
         p_11 <- rep(0.9, S + S_star)
       }
       
       if(correctP10){
-        p_10 <- p10_true
+        p_10 <- trueParams$p10_true
       } else
       {
         p_10 <- rep(0.01, S + S_star)
       }
       
       if(correctBetaTheta){
-        beta_theta <- beta_theta_true
-        theta11 <- theta11_true
+        beta_theta <- trueParams$beta_theta_true
+        theta11 <- trueParams$theta11_true
       } else
       {
         beta_theta <- cbind(rep(0, S),pmax(rnorm(S, 1), 0), matrix(0, nrow = S, ncol = ncov_w))
@@ -922,7 +923,7 @@ fitModel <- function(data,
       }
       
       if(correctTheta10){
-        theta10 <- theta10_true
+        theta10 <- trueParams$theta10_true
       } else
       {
         theta10 <- rep(.01, S)
