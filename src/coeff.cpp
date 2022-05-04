@@ -634,7 +634,8 @@ arma::vec truncNormal2(arma::vec mu,
 
 arma::vec sample_beta_cpp_trunc2(arma::mat& X, arma::mat& B, 
                                  arma::vec& b, arma::vec& Omega, 
-                                 arma::vec& k){
+                                 arma::vec& k,
+                                 bool updateBetaTheta0){
   
   arma::mat tX = arma::trans(X);
   arma::mat tXOmega = diagMatrixProd(tX, Omega);
@@ -643,18 +644,20 @@ arma::vec sample_beta_cpp_trunc2(arma::mat& X, arma::mat& B,
   arma::mat invXtOmegaXpB = arma::inv(tXOmegaX + arma::inv(B));
   arma::vec XtkpBb = tX * k + arma::inv(B) * b;
   
+  int idxBetaTheta1 = updateBetaTheta0;
   // arma::vec result = truncNormal(invXtOmegaXpB * XtkpBb, invXtOmegaXpB, 1, 0, updateBetaTheta1);
-  arma::vec result = truncNormal2(invXtOmegaXpB * XtkpBb, invXtOmegaXpB, 0, 0);
+  arma::vec result = truncNormal2(invXtOmegaXpB * XtkpBb, invXtOmegaXpB, idxBetaTheta1, 0);
   
   return(result);
 }
 
 arma::vec sample_betaPG_trunc2(arma::vec beta, arma::mat X, arma::vec b,
-                               arma::mat B, arma::vec n, arma::vec k){
+                               arma::mat B, arma::vec n, arma::vec k,
+                               bool updateBetaTheta0){
   
   arma::vec Omega = sample_Omega_cpp(X, beta, n);
   
-  beta = sample_beta_cpp_trunc2(X, B, b, Omega, k);
+  beta = sample_beta_cpp_trunc2(X, B, b, Omega, k, updateBetaTheta0);
   // beta = sample_beta_cpp_trunc(X, B, b, Omega, k, updateBetaTheta1);
   
   return(beta);
@@ -784,7 +787,7 @@ List update_betatheta11_cpp(arma::mat logz,
     arma::vec k2 = y2 - .5;
     
     arma::vec beta_j = sample_betaPG_trunc2(beta_theta11_current, X2, b_theta11,
-                                            B_theta11, n2, k2);
+                                            B_theta11, n2, k2, updateBetaTheta0);
     // beta_theta11.row(j) = arma::conv_to<arma::rowvec>::from(beta_j);
     // int idx = 0;
     

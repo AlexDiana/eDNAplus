@@ -339,7 +339,7 @@ fitModel <- function(data,
       
       updateV <- paramsToUpdate$v; correctV <- !updateV
       updateU <- paramsToUpdate$u; correctU <- !updateU
-      updateUV <- paramsToUpdate$uv; correctU <- !updateUV; correctV <- !updateUV
+      updateUV <- paramsToUpdate$uv; #correctU <- !updateUV; correctV <- !updateUV
       
       updateBetaTheta <- paramsToUpdate$beta_theta; correctBetaTheta <- !updateBetaTheta
       updateTheta10 <- paramsToUpdate$csi; correctTheta10 <- !updateTheta10
@@ -1021,7 +1021,7 @@ fitModel <- function(data,
         
         if(beta0equal0){
           if(jointSpecies){
-            tau <- diag(sqrt(Tau_params$Sigma))
+            tau <- sqrt(diag(Tau_params$Sigma))
           } else {
             tau <- Tau_params$tau
           }
@@ -1058,9 +1058,9 @@ fitModel <- function(data,
         #                              exp(lambda_prior), sigma_lambda,
         #                              S_star, betaThetaEqual1)
         
-        lambda <- update_lambda_NP(lambda_ijk, c_imk, mu,
-                                   r_nb, v, u,
-                                   lambda_prior, sigma_lambda)
+        # lambda <- update_lambda_NP(lambda_ijk, c_imk, mu,
+        #                            r_nb, v, u,
+        #                            lambda_prior, sigma_lambda)
         
       }
       
@@ -1153,7 +1153,7 @@ fitModel <- function(data,
           list_beta_z <- update_betaz_CP(beta0, beta_z, logz, tau, X_z, sigma_beta, !beta0equal0)
         }
         
-        beta0 <- list_beta_z$beta0
+        beta0 <- as.vector(list_beta_z$beta0)
         beta_z <- list_beta_z$beta_z
         
       }

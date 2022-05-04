@@ -3003,6 +3003,47 @@ update_betaz_CP_old <- function(logz, lambda, tau, X_z, sigma_beta, S_star){
 }
 
 
+update_betaz_CP_corr_old <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, updatebeta0){
+  
+  ncov_z <- ncol(X_z)
+  S <- ncol(Tau)
+  
+  if(ncov_z > 0 | updatebeta0){
+    
+    if(updatebeta0){
+      X_beta <- cbind(1, X_z)
+    } else {
+      X_beta <- X_z
+    }
+    l_noempty <- logz
+    
+    tXX <- t(X_beta) %*% X_beta
+    tXl <- t(X_beta) %*% logz
+    
+    prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
+    # prior_mean[1,] <- rep(0, S)
+    
+    M_term <- tXl + prior_mean
+    U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
+    post_U <- solve(U_term)
+    post_M <- post_U %*% M_term
+    
+    beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
+    
+    if(updatebeta0){
+      beta0 <- as.matrix(beta_bar_beta[1,])
+      beta_z <- as.matrix(beta_bar_beta[-1,,drop = F])  
+    } else {
+      beta_z <- as.matrix(beta_bar_beta)
+    }
+    
+  }
+  
+  list("beta0" = beta0,
+       "beta_z" = beta_z)
+}
+
+
 update_betaz_CP_corr_old <- function(logz, Tau, X_z, sigma_beta){
   
   list_CP_cpp <- convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, 

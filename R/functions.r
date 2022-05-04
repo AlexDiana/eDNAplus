@@ -159,6 +159,7 @@ update_lambda_CP <- function(beta0, beta_z, logz,
   
 }
 
+
 update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz, 
                              mu, lambda, v, u, lambda_ijk, r_nb,
                              c_imk, delta, gamma, X_w, beta_theta, 
@@ -522,34 +523,52 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
   
   ncov_z <- ncol(X_z)
   S <- ncol(Tau)
+  n <- nrow(X_z)
   
   if(ncov_z > 0 | updatebeta0){
     
     if(updatebeta0){
       X_beta <- cbind(1, X_z)
     } else {
-      X_beta <- cbind(1, X_z)
+      X_beta <- X_z
     }
-    l_noempty <- logz
     
-    tXX <- t(X_beta) %*% X_beta
-    tXl <- t(X_beta) %*% logz
+    Tau <- Matrix(Tau)
+    X_beta <- Matrix(X_beta)
+    Id_n <- Matrix(diag(1, nrow = n))
+    Id_s <- Matrix(diag(1, nrow = S))
     
-    prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
-    # prior_mean[1,] <- rep(0, S)
+    invSigma_tilde <- kronecker(Id_n, solve(Tau))
     
-    M_term <- tXl + prior_mean
-    U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
-    post_U <- solve(U_term)
-    post_M <- post_U %*% M_term
+    X_tilde <- kronecker(Id_s, X_beta)
     
-    beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
+    Lambda_beta <- t(X_tilde) %*% invSigma_tilde %*% X_tilde + diag(1 / sigma_beta^2, S * ncol(X_beta))
+    
+    mu_beta <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(logz)
+    
+    betavec <- mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta)))
+    betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
+    
+    #
+    
+    # tXX <- t(X_beta) %*% X_beta
+    # tXl <- t(X_beta) %*% logz
+    # 
+    # prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
+    # # prior_mean[1,] <- rep(0, S)
+    # 
+    # M_term <- tXl + prior_mean
+    # U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
+    # post_U <- solve(U_term)
+    # post_M <- post_U %*% M_term
+    # 
+    # beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
     
     if(updatebeta0){
-      beta0 <- as.matrix(beta_bar_beta[1,])
-      beta_z <- as.matrix(beta_bar_beta[-1,,drop = F])  
+      beta0 <- as.matrix(betamat[1,])
+      beta_z <- as.matrix(betamat[-1,,drop = F])  
     } else {
-      beta_z <- as.matrix(beta_bar_beta)
+      beta_z <- as.matrix(betamat)
     }
     
   }
