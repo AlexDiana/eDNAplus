@@ -45,8 +45,8 @@ rmtrnorm <- function(mu, U, V) {
     .Call(`_eDNAPlus_rmtrnorm`, mu, U, V)
 }
 
-update_betatheta11_cpp <- function(logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta1) {
-    .Call(`_eDNAPlus_update_betatheta11_cpp`, logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta1)
+update_betatheta11_cpp <- function(logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta0, updateBetaTheta1) {
+    .Call(`_eDNAPlus_update_betatheta11_cpp`, logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta0, updateBetaTheta1)
 }
 
 rinvgamma_cpp <- function(a, b) {
@@ -97,8 +97,16 @@ logdpost_cpp <- function(lambda, X_l, betatheta1, Xwbetatheta, delta, beta_barj,
     .Call(`_eDNAPlus_logdpost_cpp`, lambda, X_l, betatheta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda)
 }
 
+logdpost_cpp_beta0 <- function(lambda, X_l, betatheta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda) {
+    .Call(`_eDNAPlus_logdpost_cpp_beta0`, lambda, X_l, betatheta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda)
+}
+
 der2_logdpost_cpp <- function(lambda, X_l, beta_theta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda) {
     .Call(`_eDNAPlus_der2_logdpost_cpp`, lambda, X_l, beta_theta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda)
+}
+
+der2_logdpost_cpp_beta0 <- function(lambda, X_l, beta_theta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda) {
+    .Call(`_eDNAPlus_der2_logdpost_cpp_beta0`, lambda, X_l, beta_theta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda)
 }
 
 update_mu_cpp <- function(mu, lambda, delta, gamma, sigma, sigma_gamma, beta0, beta_z, logz, v, beta_theta, M_site, sigma_mu, S_star, emptyTubes) {

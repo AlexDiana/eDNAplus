@@ -1,0 +1,134 @@
+---
+title: "2.4_filter_OTU_tables.Rmd"
+author: "Douglas Yu"
+date: "25/08/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(magrittr)
+library(here)
+library(glue)
+library(tictoc)
+library(inspectdf)
+here()
+```
+
+
+```{r read tables}
+folder <- "leeches" # hja, kafa, leeches, ukponds
+gene <- "_12S" # "_12S" or "_16S" for leeches, use "" for all other datasets
+begumfilter <- "Filter_min1PCRs_min1copies"
+date <- "20210818"
+
+# confirm correct folder, including gene
+(gene)
+(otufolder <- here("data", "seqs", glue("folder{folder}"),
+                glue("{begumfilter}_{folder}"),
+                glue("OTUtables_{folder}_{date}")
+                ))
+
+read_otu_table <- function(tablenum){
+    read_tsv(here(glue("{otufolder}"), 
+                  glue("OTUtable{gene}_{tablenum}.txt.gz")
+                  ), 
+             trim_ws = TRUE)
+}
+
+tic()
+OTUtable1_orig <- read_otu_table(1)
+OTUtable2_orig <- read_otu_table(2)
+OTUtable3_orig <- read_otu_table(3)
+toc() # 115 secs for all 3 tables
+```
+
+```{r filter}
+# filter out un-ID'd OTUs and human OTUs, remove samples starting with "HUMAN"
+filter1 <- function(otutab){
+  otutab %>% 
+    filter(order != "root,unk") %>% 
+    filter(family != "Primates,unk", family != "Primates,Hominidae") %>% 
+    select(-starts_with("HUMAN"))
+  }
+
+OTUtable1 <- filter1(OTUtable1_orig)
+OTUtable2 <- filter1(OTUtable2_orig)
+OTUtable3 <- filter1(OTUtable3_orig)
+# rm(OTUtable1_test, OTUtable2_test, OTUtable3_test)
+```
+
+split into two OTU tables, one with "unk" or NA in genus or in species or 
+```{r}
+filter2 <- function(otutab){
+  otutab %>% 
+    filter(is.na(species) | str_detect(genus, 'unk') | str_detect(species, 'unk'))
+}
+
+OTUtable1_unk <- filter2(OTUtable1)
+OTUtable2_unk <- filter2(OTUtable2)
+OTUtable3_unk <- filter2(OTUtable3)
+
+filter3 <- function(otutab){
+  otutab %>% 
+    filter(!str_detect(genus, 'unk') & !str_detect(species, 'unk') & !is.na(species))
+}
+
+OTUtable1_no_unk <- filter3(OTUtable1)
+OTUtable2_no_unk <- filter3(OTUtable2)
+OTUtable3_no_unk <- filter3(OTUtable3)
+```
+
+```{r summarise}
+summarise1 <- function(otutab){
+  otutab %>% 
+  group_by(species) %>% 
+  summarise(
+    Cluster_Number = first(Cluster_Number),
+    QueryID = first(QueryID),
+    Size = sum(Size), 
+    class = first(class),
+    order = first(order),
+    family = first(family),
+    genus = first(genus),
+    species = first(species),
+    across(CX01:NC2, sum)
+  ) %>% 
+  relocate(species, .after = genus)
+}
+
+OTUtable1_no_unk_summ <- summarise1(OTUtable1_no_unk)
+OTUtable2_no_unk_summ <- summarise1(OTUtable2_no_unk)
+OTUtable3_no_unk_summ <- summarise1(OTUtable3_no_unk)
+```
+
+```{r bind rows}
+OTUtable1_reduced <- bind_rows(OTUtable1_no_unk_summ, OTUtable1_unk)
+OTUtable2_reduced <- bind_rows(OTUtable2_no_unk_summ, OTUtable2_unk)
+OTUtable3_reduced <- bind_rows(OTUtable2_no_unk_summ, OTUtable2_unk)
+
+nanorana_not <- OTUtable1_reduced %>% 
+  filter(!str_detect(genus, "Nanorana") | !str_detect(species, "Nanorana"))
+nanorana <- OTUtable1_reduced %>% 
+  filter(str_detect(genus, "Nanorana") | str_detect(species, "Nanorana"))
+```
+
+
+```{r}
+(gene) # confirm using correct gene (12S or 16S)
+
+writeotutab <- function(pcrnumber){
+    write_tsv(get(glue("OTUtable{pcrnumber}_reduced")), 
+              file = gzfile(here("data", "seqs", glue("folder{folder}"),
+                          glue("{begumfilter}_{folder}"),
+                          glue("OTUtables_{folder}_{date}"),
+                          glue("OTUtable{gene}_{pcrnumber}_reduced.txt.gz")
+              )))
+    }
+
+writeotutab(1)
+writeotutab(2)
+writeotutab(3)
+```
+

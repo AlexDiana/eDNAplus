@@ -159,8 +159,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_betatheta11_cpp
-List update_betatheta11_cpp(arma::mat logz, arma::mat beta_theta11, arma::mat theta11, arma::mat delta, arma::mat X_w, arma::vec M_site, arma::vec b_theta11, arma::mat B_theta11, bool updateBetaTheta1);
-RcppExport SEXP _eDNAPlus_update_betatheta11_cpp(SEXP logzSEXP, SEXP beta_theta11SEXP, SEXP theta11SEXP, SEXP deltaSEXP, SEXP X_wSEXP, SEXP M_siteSEXP, SEXP b_theta11SEXP, SEXP B_theta11SEXP, SEXP updateBetaTheta1SEXP) {
+List update_betatheta11_cpp(arma::mat logz, arma::mat beta_theta11, arma::mat theta11, arma::mat delta, arma::mat X_w, arma::vec M_site, arma::vec b_theta11, arma::mat B_theta11, bool updateBetaTheta0, bool updateBetaTheta1);
+RcppExport SEXP _eDNAPlus_update_betatheta11_cpp(SEXP logzSEXP, SEXP beta_theta11SEXP, SEXP theta11SEXP, SEXP deltaSEXP, SEXP X_wSEXP, SEXP M_siteSEXP, SEXP b_theta11SEXP, SEXP B_theta11SEXP, SEXP updateBetaTheta0SEXP, SEXP updateBetaTheta1SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -172,8 +172,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type b_theta11(b_theta11SEXP);
     Rcpp::traits::input_parameter< arma::mat >::type B_theta11(B_theta11SEXP);
+    Rcpp::traits::input_parameter< bool >::type updateBetaTheta0(updateBetaTheta0SEXP);
     Rcpp::traits::input_parameter< bool >::type updateBetaTheta1(updateBetaTheta1SEXP);
-    rcpp_result_gen = Rcpp::wrap(update_betatheta11_cpp(logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta1));
+    rcpp_result_gen = Rcpp::wrap(update_betatheta11_cpp(logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta0, updateBetaTheta1));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -410,6 +411,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// logdpost_cpp_beta0
+double logdpost_cpp_beta0(double lambda, NumericVector X_l, double betatheta1, NumericVector Xwbetatheta, NumericVector Xbetalogz, arma::vec delta, NumericVector logz_barj, double tau, double mu_barj, double sigma_mu, double lambda_priorj, double sigma_lambda);
+RcppExport SEXP _eDNAPlus_logdpost_cpp_beta0(SEXP lambdaSEXP, SEXP X_lSEXP, SEXP betatheta1SEXP, SEXP XwbetathetaSEXP, SEXP XbetalogzSEXP, SEXP deltaSEXP, SEXP logz_barjSEXP, SEXP tauSEXP, SEXP mu_barjSEXP, SEXP sigma_muSEXP, SEXP lambda_priorjSEXP, SEXP sigma_lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type X_l(X_lSEXP);
+    Rcpp::traits::input_parameter< double >::type betatheta1(betatheta1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Xwbetatheta(XwbetathetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Xbetalogz(XbetalogzSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type logz_barj(logz_barjSEXP);
+    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_barj(mu_barjSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_mu(sigma_muSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda_priorj(lambda_priorjSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_lambda(sigma_lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(logdpost_cpp_beta0(lambda, X_l, betatheta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
 // der2_logdpost_cpp
 double der2_logdpost_cpp(double lambda, NumericVector X_l, double beta_theta1, NumericVector Xwbetatheta, arma::vec delta, double beta_barj, double sigma_beta, double mu_barj, double sigma_mu, double lambda_priorj, double sigma_lambda);
 RcppExport SEXP _eDNAPlus_der2_logdpost_cpp(SEXP lambdaSEXP, SEXP X_lSEXP, SEXP beta_theta1SEXP, SEXP XwbetathetaSEXP, SEXP deltaSEXP, SEXP beta_barjSEXP, SEXP sigma_betaSEXP, SEXP mu_barjSEXP, SEXP sigma_muSEXP, SEXP lambda_priorjSEXP, SEXP sigma_lambdaSEXP) {
@@ -428,6 +451,28 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lambda_priorj(lambda_priorjSEXP);
     Rcpp::traits::input_parameter< double >::type sigma_lambda(sigma_lambdaSEXP);
     rcpp_result_gen = Rcpp::wrap(der2_logdpost_cpp(lambda, X_l, beta_theta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda));
+    return rcpp_result_gen;
+END_RCPP
+}
+// der2_logdpost_cpp_beta0
+double der2_logdpost_cpp_beta0(double lambda, NumericVector X_l, double beta_theta1, NumericVector Xwbetatheta, NumericVector Xbetalogz, arma::vec delta, NumericVector logz_barj, double tau, double mu_barj, double sigma_mu, double lambda_priorj, double sigma_lambda);
+RcppExport SEXP _eDNAPlus_der2_logdpost_cpp_beta0(SEXP lambdaSEXP, SEXP X_lSEXP, SEXP beta_theta1SEXP, SEXP XwbetathetaSEXP, SEXP XbetalogzSEXP, SEXP deltaSEXP, SEXP logz_barjSEXP, SEXP tauSEXP, SEXP mu_barjSEXP, SEXP sigma_muSEXP, SEXP lambda_priorjSEXP, SEXP sigma_lambdaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type X_l(X_lSEXP);
+    Rcpp::traits::input_parameter< double >::type beta_theta1(beta_theta1SEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Xwbetatheta(XwbetathetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Xbetalogz(XbetalogzSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type logz_barj(logz_barjSEXP);
+    Rcpp::traits::input_parameter< double >::type tau(tauSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_barj(mu_barjSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_mu(sigma_muSEXP);
+    Rcpp::traits::input_parameter< double >::type lambda_priorj(lambda_priorjSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_lambda(sigma_lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(der2_logdpost_cpp_beta0(lambda, X_l, beta_theta1, Xwbetatheta, Xbetalogz, delta, logz_barj, tau, mu_barj, sigma_mu, lambda_priorj, sigma_lambda));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -992,7 +1037,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_sample_betaPG", (DL_FUNC) &_eDNAPlus_sample_betaPG, 6},
     {"_eDNAPlus_dmvnorm_cpp", (DL_FUNC) &_eDNAPlus_dmvnorm_cpp, 4},
     {"_eDNAPlus_rmtrnorm", (DL_FUNC) &_eDNAPlus_rmtrnorm, 3},
-    {"_eDNAPlus_update_betatheta11_cpp", (DL_FUNC) &_eDNAPlus_update_betatheta11_cpp, 9},
+    {"_eDNAPlus_update_betatheta11_cpp", (DL_FUNC) &_eDNAPlus_update_betatheta11_cpp, 10},
     {"_eDNAPlus_rinvgamma_cpp", (DL_FUNC) &_eDNAPlus_rinvgamma_cpp, 2},
     {"_eDNAPlus_update_betaw_cpp", (DL_FUNC) &_eDNAPlus_update_betaw_cpp, 8},
     {"_eDNAPlus_convertSPtoCP_cpp", (DL_FUNC) &_eDNAPlus_convertSPtoCP_cpp, 12},
@@ -1005,7 +1050,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_update_logz_cpp", (DL_FUNC) &_eDNAPlus_update_logz_cpp, 17},
     {"_eDNAPlus_update_logz_corr_cpp", (DL_FUNC) &_eDNAPlus_update_logz_corr_cpp, 17},
     {"_eDNAPlus_logdpost_cpp", (DL_FUNC) &_eDNAPlus_logdpost_cpp, 11},
+    {"_eDNAPlus_logdpost_cpp_beta0", (DL_FUNC) &_eDNAPlus_logdpost_cpp_beta0, 12},
     {"_eDNAPlus_der2_logdpost_cpp", (DL_FUNC) &_eDNAPlus_der2_logdpost_cpp, 11},
+    {"_eDNAPlus_der2_logdpost_cpp_beta0", (DL_FUNC) &_eDNAPlus_der2_logdpost_cpp_beta0, 12},
     {"_eDNAPlus_update_mu_cpp", (DL_FUNC) &_eDNAPlus_update_mu_cpp, 15},
     {"_eDNAPlus_update_sigma_cpp", (DL_FUNC) &_eDNAPlus_update_sigma_cpp, 17},
     {"_eDNAPlus_update_tau_cpp", (DL_FUNC) &_eDNAPlus_update_tau_cpp, 7},

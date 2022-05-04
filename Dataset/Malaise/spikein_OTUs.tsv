@@ -1,0 +1,5 @@
+Record_Type	Cluster_Number	Centroid_Length	Percentage_Similarity	Match_Orientation	NA1	NA2	Representation	Query_Sequence_Label	OTUSize	Centroid_Sequence_Label
+H	2	313	100.0	+	0	0	345I313M	NC3--428414_14834_14150	2805995	Mordellidae_spikein
+H	1	313	100.0	+	0	0	345I313M	NC3--224495_8668_11277	1421667	Elateridae_spikein
+H	0	313	100.0	+	0	0	345I313M	NC3--0_0_20	78	Bombyx_mori_spikein
+H	1	313	97.5	+	0	0	343I5M2I308M	S-10-5--1_0_0_33622	3	Elateridae_spikein

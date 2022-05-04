@@ -5,19 +5,26 @@
 #' @description This function fits the occupancy model of Diana et al. (2021). 
 #' Note that in the following the parameters are described with the notations used in the paper.
 #' 
-#' @param data A list with components 
+#' @param data A list containing the data. Detailed informations are given in the vignette. The elements are:
 #'  \itemize{
 #' 
-#'  \item \code{y} An array of dimension n \times K \times (S + Star), where 
-#'      
-#'  
+#'  \item \code{PCR_table}: A data.frame with the reads of the wildlife species. 
+#'  \item \code{infos}: A data.frame with the samples informations.
+#'  \item \code{X_z}: Covariate matrix for the biomass abundance
+#'  \item \code{X_w}: Covariate matrix for the biomass detection
+#'  \item \code{PCR_spike}: A data.frame with the reads of the spike-in species. 
 #'  }
 #'  
 #' @param priors List of prior parameters. If not specified, default values are used.
 #' @param jointSpecies Does the model include species correlation?
-#' @param paramsUpdate The index of the column containing the detections.
-#' @param MCMCparams The index of the x coordinate of the site.
-#' @param paramsToSave The index of the y coordinate of the site. 
+#' @param MCMCparams A list with components:
+#' \itemize{
+#'    \item \code{nchain}: Number of chains
+#'    \item \code{nburn}: Number of burn-in iterations
+#'    \item \code{niter}: Number of iterations
+#'    \item \code{nthin}: Number of iterations to thin
+#' }
+#' @param paramsToSave A list with components the elements of which the MCMC output need to be saved. 
 
 #' @importFrom magrittr %>%
 #' 
@@ -40,43 +47,51 @@
 #'                         jointSpecies = T,
 #'                         MCMCparams)  
 #' 
-runEDNA <- function(data0,
+runEDNA <- function(data,
                     priors = NULL,
                     jointSpecies = F,
-                    paramsUpdate = list(updateAll = T,
-                                        params = NULL,
-                                        correct = NULL,
-                                        trueParams = NULL),
+                    paramsUpdate = NULL,
                     MCMCparams,
-                    paramsToSave = list(
-                      "lambda" = T,
-                      "beta0" = T,
-                      "mu" = T,
-                      "beta_z" = T,
-                      "logz" = T,
-                      "u" = T,
-                      "v" = F,
-                      "beta_w" = T,
-                      "Tau" = T,
-                      "sigma" = T,
-                      "beta_theta" = T,
-                      "theta" = F,
-                      "csi" = T,
-                      "delta" = F,
-                      "gamma" = F,
-                      "r" = T,
-                      "p11" = T,
-                      "p10" = T,
-                      "p10" = T,
-                      "mutilde" = T,
-                      "c_imk" = F,
-                      "mu0" = T,
-                      "n0" = T,
-                      "pi0" = T,
-                      "eta" = F
-                    )){
+                    paramsToSave = NULL){
   
-  data <- cleanData(data0)
+  data <- cleanData(data)
+  
+  if(missing(paramsUpdate)){
+    paramsUpdate <- list(updateAll = T,
+                         params = NULL,
+                         correct = NULL,
+                         trueParams = NULL)
+  }
+  
+  if(missing(paramsToSave)){
+    paramsToSave <- list(
+      "lambda" = T,
+      "beta0" = T,
+      "mu" = T,
+      "beta_z" = T,
+      "logz" = T,
+      "u" = T,
+      "v" = F,
+      "beta_w" = T,
+      "Tau" = T,
+      "sigma" = T,
+      "beta_theta" = T,
+      "theta" = F,
+      "csi" = T,
+      "delta" = F,
+      "gamma" = F,
+      "r" = T,
+      "p11" = T,
+      "p10" = T,
+      "p10" = T,
+      "mutilde" = T,
+      "c_imk" = F,
+      "mu0" = T,
+      "n0" = T,
+      "pi0" = T,
+      "eta" = F
+    )
+  }
   
   modelResults <- fitModel(data,
                            priors,
@@ -406,7 +421,7 @@ fitModel <- function(data,
     nburn <- MCMCparams$nburn
     niter <- MCMCparams$niter
     nthin <- MCMCparams$nthin
-    iterToAdapt <- MCMCparams$iterToAdapt  
+    iterToAdapt <- Inf#MCMCparams$iterToAdapt  
   }
   
   # output
