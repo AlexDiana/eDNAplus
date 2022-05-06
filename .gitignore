@@ -38,3 +38,4 @@ vignettes/*.pdf
 # Project files
 Data
 Model
+inst/doc
