@@ -155,12 +155,23 @@ cleanData <- function(data){
   y <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S + S_star),
              dimnames = list(NULL, NULL, OTUnames))
   for (k in 1:max(K)) {
-    y[,k,1:S] <- as.matrix(PCR_table[,1:S + (k-1)*S,])
-    y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star,])
+    y[,k,1:S] <- as.matrix(PCR_table[,1:S + (k-1)*S])
+    y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star])
   }
   
-  X_w <- as.matrix(X_w0[match(samples, infos$Sample), ])
-  X_z <- as.matrix(X_z0[match(sites, infos$Site), ])
+  if(is.null(X_w0)){
+    X_w <- matrix(0, nrow = length(samples), ncol = 0)
+  } else {
+    X_w <- as.matrix(X_w0[match(samples, X_w0[,1]), -1])
+  }
+  
+  if(is.null(X_z0)){
+    X_z <- matrix(0, nrow = length(sites), ncol = 0)
+  } else {
+    X_z <- as.matrix(X_z0[match(sites, X_z0[,1]), -1])
+  }
+  
+  # X_z <- as.matrix(X_z0[match(sites, X_z$), ])
   
   data <- list("y" = y,
                "M_site" = M_site,

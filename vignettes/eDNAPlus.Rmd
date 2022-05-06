@@ -50,7 +50,7 @@ head(data$infos, 7)
 
 A data.frame containing the information of the samples in the PCR table. The columns are:
 
-   1. Site: Site from which the sample was taken. If it is an empty tube, site should be "empty"
+   1. Site: Site from which the sample was taken. If it is an empty tube, site should be named "empty"
 
    2. Samples: Name of the samples.
 
