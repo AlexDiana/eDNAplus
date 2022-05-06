@@ -17,11 +17,11 @@ runEDNA(
 \item{data}{A list containing the data. Detailed informations are given in the vignette. The elements are:
  \itemize{
 
- \item \code{PCR_table}: A data.frame with the reads of the wildlife species. Structure specified in the vignette.
+ \item \code{PCR_table}: A data.frame with the reads of the wildlife species. 
  \item \code{infos}: A data.frame with the samples informations.
  \item \code{X_z}: Covariate matrix for the biomass abundance
  \item \code{X_w}: Covariate matrix for the biomass detection
- \item \code{PCR_spike}: A data.frame with the reads of the spike-in species. Structure specified in the vignette.
+ \item \code{PCR_spike}: A data.frame with the reads of the spike-in species. 
  }}
 
 \item{priors}{List of prior parameters. If not specified, default values are used.}
