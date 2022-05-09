@@ -182,7 +182,8 @@ cleanData <- function(data){
                "spikedSample" = spikedSample,
                "v_spikes" = v_spikes,
                "X_w" = X_w,
-               "X_z" = X_z)
+               "X_z" = X_z,
+               "sites" = sites)
   
 }
 
@@ -194,8 +195,8 @@ fitModel <- function(data,
                                          correct = NULL,
                                          trueParams = NULL),
                      MCMCparams,
-                     idConstraints = list(beta0equal0 = T,
-                                          betathetaequal0 = F),
+                     idConstraints = list(beta0equal0 = F,
+                                          betathetaequal0 = T),
                      paramsToSave = list(
                        "lambda" = T,
                        "beta0" = T,
@@ -235,6 +236,7 @@ fitModel <- function(data,
     X_z <- data$X_z
     v_spikes <- data$v_spikes
     spikedSample <- data$spikedSample
+    sites <- data$sites
     
     ncov_z <- ncol(X_z)
     ncov_w <- ncol(X_w)
@@ -1611,5 +1613,10 @@ fitModel <- function(data,
     "eta_output" = eta_output
   )
   
-  output <- list("params_output" = params_output)
+  data_infos = list(
+    "sites" = sites
+  )
+  
+  output <- list("params_output" = params_output,
+                 "data_infos" = data_infos)
 }
