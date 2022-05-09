@@ -7,7 +7,7 @@ library(tictoc)
 library(inspectdf)
 library(dplyr)
 
-setwd(here("Data/Malaise"))
+setwd("C:/Users/Alex/Desktop/Malaise")
 # OTUtable1_orig <- read.table(file = "OTUtable_12S_1.txt", header = T)
 # OTUtable2_orig <- read.table(file = "OTUtable_12S_2.txt", header = T)
 # OTUtable3_orig <- read.table(file = "OTUtable_12S_3.txt", header = T)
@@ -90,13 +90,24 @@ OTUtable <- OTUtable %>% arrange(desc(Site), Sample, PCR)
 
 # add site and sample covariate ---------------
 
-uniqueSite_Xz <- setdiff(unique(OTUtable$Site), "-")
+setwd("C:/Users/Alex/Desktop/Malaise")
+siteinfovars1 <- readRDS("site-info-vars11-S1.rds")
+siteinfovars2 <- readRDS("site-info-vars11-S2.rds")
 
-X_z_0 <- as.matrix(envcov_orig[match(uniqueSite_Xz, envcov_orig$Site),-c(1,2,3,165,166)])
+colnames(siteinfovars2)[10] <- colnames(siteinfovars1)[10]
+siteinfovars <- rbind(siteinfovars1, siteinfovars2)
+
+siteinfovars <- siteinfovars[!duplicated(siteinfovars$SiteName),]
+
+# uniqueSite_Xz <- setdiff(unique(OTUtable$Site), "-")
+
+# X_z_0 <- as.matrix(envcov_orig[match(uniqueSite_Xz, envcov_orig$Site),-c(1,2,3,165,166)])
+
+X_z <- siteinfovars[,c("SiteName", "be30", "lg_DistRoad")]
 
 uniqueSample_Xw <- unique(OTUtable$Sample)[-c(117:124)]
 
-X_w_0 <- as.matrix(envcov_orig[match(uniqueSample_Xw, envcov_orig$Sample),-c(1,2,3,165,166)])
+X_w_0 <- envcov_orig[match(uniqueSample_Xw, envcov_orig$Sample),-c(1,2,3,165,166)]
 
 # assign spike-ins --------------
 
@@ -116,15 +127,18 @@ OTUtable0 <- OTUtable[4:ncol(OTUtable)]
 
 # order by species presence
 sumreadspecies <- apply(OTUtable0, 2, sum)
+nonNAreadspecies <- apply(OTUtable0, 2, function(x){
+  sum(x > 3)
+})
 # OTUtable <- OTUtable[,c(1:3, 3 + order(-sumreadspecies))]
 
 data <- OTUtable[,1:3]
 OTU <- OTUtable[,-c(1:3)]
 OTU_0 <- OTU
 
-OTU <- OTU[,order(-sumreadspecies)]
-OTUspecies <- OTUspecies[order(-sumreadspecies)]
-OTUspikes <- OTUspikes[order(-sumreadspecies)]
+OTU <- OTU[,order(-nonNAreadspecies)]
+OTUspecies <- OTUspecies[order(-nonNAreadspecies)]
+OTUspikes <- OTUspikes[order(-nonNAreadspecies)]
 
 OTU_nonspike <- OTU[,1:100]
 OTU_spike <- OTU[,OTUspikes]
@@ -160,10 +174,137 @@ OTU_nonspike <- t(apply(OTU_nonspike, 1, function(x){
   round(x * lysis_ratio_factor[i])
 }))
 
-save(data, OTU_nonspike, OTU_spike,
-     uniqueSite_Xz, X_w_0, uniqueSample_Xw, X_z_0, file = "malaise.rda")
+# save(data, OTU_nonspike, OTU_spike,
+#      uniqueSite_Xz, X_w_0, uniqueSample_Xw, X_z_0, file = "malaise.rda")
 
-# REARRANGING FOR MODEL -----------
+# REARRANGING FOR MODEL new -----------
+
+K <- sapply(unique(data$Sample), function(x){
+  length(unique(data$PCR[data$Sample == x]))
+})
+
+sites <- unique(data$Site)
+sites <- setdiff(sites,"-")
+n <- length(sites)
+samples <- unique(data$Sample[data$Site %in% sites])
+M_site <- sapply(1:n, function(i){
+  length(unique(data$Sample[data$Site == sites[i]]))
+})
+
+emptyTubes <- length(unique(data$Sample[data$Site == "-"]))
+
+S <- ncol(OTU_nonspike)
+S_star <- ncol(OTU_spike)
+
+# convert to y format
+y <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S + S_star),
+           dimnames = list(unique(data$Sample), 1:max(K), c(colnames(OTU_nonspike),
+                                                            colnames(OTU_spike))))
+data_infos <- data.frame(Site = rep(0, sum(M_site) + emptyTubes),
+                         Sample = rep(0, sum(M_site) + emptyTubes))
+for (i in 1:n) {
+  print(i)
+  site <- sites[i]
+  sampleSite <- unique(data$Sample[data$Site == site])
+  for (m in 1:M_site[i]) {
+    sample <- sampleSite[m]
+    replicates <- unique(data$PCR[data$Site == site &
+                                    data$Sample == sample])
+    numRep <- length(replicates)
+    for (k in 1:numRep) {
+      rep <- replicates[k]
+      for (j in 1:S) {
+        y[m + sum(M_site[seq_len(i-1)]),k,j] <- OTU_nonspike[data$Site == site &
+                                                      data$Sample == sample &
+                                                      data$PCR == rep, j]
+      }
+      for (j in 1:S_star) {
+        y[m + sum(M_site[seq_len(i-1)]),k,S + j] <- OTU_spike[data$Site == site &
+                                                      data$Sample == sample &
+                                                      data$PCR == rep, j]
+      }
+    }
+    data_infos$Site[m + sum(M_site[seq_len(i-1)])] <- site
+    data_infos$Sample[m + sum(M_site[seq_len(i-1)])] <- sample
+  }
+}
+
+emptyTubes_sample <- unique(data$Sample[data$Site == "-"])
+for (m in 1:emptyTubes) {
+  print(m)
+  site <- "-"
+  sample <- emptyTubes_sample[m]
+  replicates <- unique(data$PCR[data$Site == site &
+                                  data$Sample == sample])
+  numRep <- length(replicates)
+  for (k in 1:numRep) {
+    rep <- replicates[k]
+    for (j in 1:S) {
+      y[m + sum(M_site),k,j] <- OTU_nonspike[data$Site == site &
+                                                             data$Sample == sample &
+                                                             data$PCR == rep, j]
+    }
+    for (j in 1:S_star) {
+      y[m + sum(M_site),k,S + j] <- OTU_spike[data$Site == site &
+                                                              data$Sample == sample &
+                                                              data$PCR == rep, j]
+    }
+  }
+  data_infos$Site[m + sum(M_site)] <- site
+  data_infos$Sample[m + sum(M_site)] <- sample
+}
+
+PCR_table <- cbind(y[,1,1:S],y[,2,1:S],y[,3,1:S])
+# OTU_names <- colnames(PCR_table)[1:S]
+# OTU_names <- sapply(1:length(OTU_names), function(i){
+#   strsplit(OTU_names[i], "_")[[1]][1]
+# })
+# colnames(PCR_table)[1:S] <- OTU_names
+# 
+PCR_spike <- cbind(y[,1,S + seq_len(S_star)],
+                   y[,2,S + seq_len(S_star)],
+                   y[,3,S + seq_len(S_star)])
+# OTU_names <- colnames(PCR_spike)[1:S_star]
+# OTU_names <- sapply(1:length(OTU_names), function(i){
+#   strsplit(OTU_names[i], "_")[[1]][1]
+# })
+# colnames(PCR_spike)[1:S_star] <- OTU_names
+
+infos <- data_infos
+infos$Replicates <- K
+infos$Site[infos$Site == "-"] <- "empty"
+
+# X_z <- X_z_0[,c(28, 33)]
+# X_z <- apply(X_z, 2, function(x){
+#   as.numeric(x)
+# })
+X_z[,-1] <- scale(X_z[,-1])
+X_z <- X_z[match(setdiff(unique(infos$Site),"empty"), X_z[,1]),]
+
+# X_w <- X_w_0[,c(29),drop = F]
+# X_w <- apply(X_w, 2, function(x){
+#   as.numeric(x)
+# })
+# X_w <- scale(X_w)
+# X_w <- X_w[match(setdiff(data_infos$Sample,
+#                          data$Sample[data$Site == "-"]), uniqueSample_Xw),,drop=F]
+
+v_spikes <- matrix(0, nrow = sum(M_site) + emptyTubes, S_star)
+
+spikedSample <- rbind(matrix(1, nrow = sum(M_site), S_star),
+                      matrix(1, nrow = 5, S_star),
+                      matrix(0, nrow = 3, S_star))
+
+data <- list("PCR_table" = PCR_table,
+             "infos" = infos,
+             "X_z" = X_z,
+             "PCR_spike" = PCR_spike,
+             "spikedSample " = spikedSample)
+
+setwd("~/eDNAPlus/Dataset")
+save(data, file = "data_malaise.rda")
+
+# REARRANGING FOR MODEL 1 -----------
 
 # data$SiteSample <- paste0(data$Site, data$Sample)
 K <- sapply(unique(data$Sample), function(x){

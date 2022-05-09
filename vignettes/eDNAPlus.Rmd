@@ -46,7 +46,7 @@ A data.frame containing the information of the samples in the PCR table. The col
 
    2. Samples: Name of the samples.
 
-   3. PCR: Number of PCR replicates in this sample.
+   3. Replicates: Number of PCR replicates in this sample.
 
 
 * X_z: Biomass abundance covariates matrix

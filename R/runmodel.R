@@ -116,10 +116,13 @@ cleanData <- function(data){
   
   S <- ncol(PCR_table) / max(K)
   
-  sites <- unique(infos$Site)
+  # sites <- unique(infos$Site)
+  sites <- infos$Site[!duplicated(infos$Site)]
   sites <- setdiff(sites,"empty")
   n <- length(sites)
-  samples <- unique(infos$Sample[infos$Site %in% sites])
+  # samples <- unique(infos$Sample[infos$Site %in% sites])
+  nonEmptySamples <- infos$Sample[infos$Site %in% sites]
+  samples <- nonEmptySamples[!duplicated(nonEmptySamples)]  
   M_site <- sapply(1:n, function(i){
     length(unique(infos$Sample[infos$Site == sites[i]]))
   })
@@ -170,8 +173,6 @@ cleanData <- function(data){
   } else {
     X_z <- as.matrix(X_z0[match(sites, X_z0[,1]), -1])
   }
-  
-  # X_z <- as.matrix(X_z0[match(sites, X_z$), ])
   
   data <- list("y" = y,
                "M_site" = M_site,
