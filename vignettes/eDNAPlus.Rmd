@@ -111,11 +111,3 @@ The package provides function to produce traceplots to assess convergence. The f
 ```{r, fig.width = 6, fig.height= 4}
 #tracePlot_OccupancyYearEffect(modelResults, 1)
 ```
-
-* `tracePlot_OccupancySiteEffect`: Traceplots of the site-specific random effects.
-
-* `tracePlot_OccupancyCovariate`: Traceplot of the covariates of the occupancy probability.
-
-* `tracePlot_DetectionIntercept`: Traceplot of the intercept of the detection probability.
-
-* `tracePlot_DetectionCovariate`: Traceplot of the covariates of the detection probability.
