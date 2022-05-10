@@ -442,49 +442,49 @@ fitModel <- function(data,
   {
     
     if(paramsToSave$lambda){
-      lambda_output <- array(NA, c(nchain, S + S_star, niter))
+      lambda_output <- array(NA, c(nchain, niter, S + S_star))
     } else {
       lambda_output <- NULL
     }
     
     if(paramsToSave$beta0){
-      beta0_output <- array(NA, dim = c(nchain, S, niter))
+      beta0_output <- array(NA, dim = c(nchain, niter, S))
     } else {
       beta0_output <- NULL
     }
     
     if(paramsToSave$mu){
-      mu_output <- array(NA, dim = c(nchain, S, niter))
+      mu_output <- array(NA, dim = c(nchain, niter, S))
     } else {
       mu_output <- NULL
     }
     
     if(paramsToSave$beta_z){
-      beta_z_output <- array(NA, dim = c(nchain, ncov_z, S, niter))
+      beta_z_output <- array(NA, dim = c(nchain,  niter, ncov_z, S))
     } else {
       beta_z_output <- NULL
     }
     
     if(paramsToSave$logz){
-      logz_output <- array(NA, dim = c(nchain, n, S, niter))
+      logz_output <- array(NA, dim = c(nchain, niter, n, S))
     } else {
       logz_output <- NULL
     }
     
     if(paramsToSave$u){
-      u_output <- array(NA, c(nchain, sum(M_site) + emptyTubes, max(K), niter))
+      u_output <- array(NA, c(nchain,  niter, sum(M_site) + emptyTubes, max(K)))
     } else {
       u_output <- NULL
     }
     
     if(paramsToSave$v){
-      v_output <- array(NA, dim = c(nchain, sum(M_site), S + S_star, niter))
+      v_output <- array(NA, dim = c(nchain, niter, sum(M_site), S + S_star))
     } else {
       v_output <- NULL
     }
     
     if(paramsToSave$beta_w){
-      beta_w_output <- array(NA, c(nchain, ncov_w, S, niter))
+      beta_w_output <- array(NA, c(nchain, niter, ncov_w, S))
     } else {
       beta_w_output <- NULL
     }
@@ -493,62 +493,62 @@ fitModel <- function(data,
       if(jointSpecies){
         Tau_output <- array(NA, dim = c(nchain, niter, S, S))
       } else {
-        Tau_output <- array(NA, c(nchain, S, niter))
+        Tau_output <- array(NA, c(nchain, niter, S))
       }
     } else {
       Tau_output <- NULL
     }
     
     if(paramsToSave$sigma){
-      sigma_output <- array(NA, c(nchain, S, niter))
+      sigma_output <- array(NA, c(nchain, niter, S))
     } else {
       sigma_output <- NULL
     }
     
     if(paramsToSave$beta_theta){
-      beta_theta_output <- array(NA, dim = c(nchain, S, 2 + ncov_w, niter))
+      beta_theta_output <- array(NA, dim = c(nchain, niter, S, 2 + ncov_w))
     } else {
       beta_theta_output <- NULL
     }
     
     if(paramsToSave$theta){
-      theta_output <- array(NA, dim = c(nchain, sum(M_site), S, niter))
+      theta_output <- array(NA, dim = c(nchain, niter, sum(M_site), S))
     } else {
       theta_output <- NULL
     }
     
     if(paramsToSave$csi){
-      csi_output <- array(NA, dim = c(nchain, S, niter))
+      csi_output <- array(NA, dim = c(nchain, niter, S))
     } else {
       csi_output <- NULL
     }
     
     if(paramsToSave$delta){
-      delta_output <- array(NA, dim = c(nchain, sum(M_site) + emptyTubes, S + S_star, niter))
+      delta_output <- array(NA, dim = c(nchain, niter, sum(M_site) + emptyTubes, S + S_star))
     } else {
       delta_output <- NULL
     }
     
     if(paramsToSave$gamma){
-      gamma_output <- array(NA, dim = c(nchain, sum(M_site) + emptyTubes, S + S_star, niter))
+      gamma_output <- array(NA, dim = c(nchain, niter, sum(M_site) + emptyTubes, S + S_star))
     } else {
       gamma_output <- NULL
     }
     
     if(paramsToSave$r){
-      r_output <- array(NA, dim = c(nchain, S + S_star, niter))
+      r_output <- array(NA, dim = c(nchain, niter, S + S_star))
     } else {
       r_output <- NULL
     }
     
     if(paramsToSave$p11){
-      p_11_output <- array(NA, dim = c(nchain, S + S_star, niter))
+      p_11_output <- array(NA, dim = c(nchain, niter, S + S_star))
     } else {
       p_11_output <- NULL
     }
     
     if(paramsToSave$p10){
-      p_10_output <- array(NA, dim = c(nchain, S + S_star, niter))
+      p_10_output <- array(NA, dim = c(nchain, niter, S + S_star))
     } else {
       p_10_output <- NULL
     }
@@ -560,7 +560,7 @@ fitModel <- function(data,
     }
     
     if(paramsToSave$c_imk){
-      cimk_output <- array(NA, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S + S_star, niter))
+      cimk_output <- array(NA, dim = c(nchain, niter, sum(M_site) + emptyTubes, max(K), S + S_star))
     } else {
       cimk_output <- NULL
     }
@@ -584,7 +584,7 @@ fitModel <- function(data,
     }
     
     if(paramsToSave$eta){
-      eta_output <- array(NA, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S + S_star, niter))
+      eta_output <- array(NA, dim = c(nchain, niter, sum(M_site) + emptyTubes, max(K), S + S_star))
     } else {
       eta_output <- NULL
     }
@@ -596,49 +596,49 @@ fitModel <- function(data,
     # chain output
     {
       if(paramsToSave$lambda){
-        lambda_output_iter <- matrix(NA, nrow = S + S_star, ncol = niter)
+        lambda_output_iter <- matrix(NA, nrow = niter, ncol = S + S_star)
       } else {
         lambda_output_iter <- NULL
       }
       
       if(paramsToSave$beta0){
-        beta0_output_iter <- array(NA, dim = c(S, niter))
+        beta0_output_iter <- array(NA, dim = c(niter, S))
       } else {
         beta0_output_iter <- NULL
       }
       
       if(paramsToSave$mu){
-        mu_output_iter <- array(NA, dim = c(S, niter))
+        mu_output_iter <- array(NA, dim = c(niter, S))
       } else {
         mu_output_iter <- NULL
       }
       
       if(paramsToSave$beta_z){
-        beta_z_output_iter <- array(NA, dim = c(ncov_z, S, niter))
+        beta_z_output_iter <- array(NA, dim = c(niter, ncov_z, S))
       } else {
         beta_z_output_iter <- NULL
       }
       
       if(paramsToSave$logz){
-        logz_output_iter <- array(NA, dim = c(n, S, niter))
+        logz_output_iter <- array(NA, dim = c(niter, n, S))
       } else {
         logz_output_iter <- NULL
       }
       
       if(paramsToSave$u){
-        u_output_iter <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), niter))
+        u_output_iter <- array(NA, dim = c(niter, sum(M_site) + emptyTubes, max(K)))
       } else {
         u_output_iter <- NULL
       }
       
       if(paramsToSave$v){
-        v_output_iter <- array(NA, dim = c(sum(M_site), S + S_star, niter))
+        v_output_iter <- array(NA, dim = c(niter, sum(M_site), S + S_star))
       } else {
         v_output_iter <- NULL
       }
       
       if(paramsToSave$beta_w){
-        beta_w_output_iter <- array(NA, c(ncov_w, S, niter))
+        beta_w_output_iter <- array(NA, c(niter, ncov_w, S))
       } else {
         beta_w_output_iter <- NULL
       }
@@ -647,62 +647,62 @@ fitModel <- function(data,
         if(jointSpecies){
           Tau_output_iter <- array(NA, dim = c(niter, S, S))
         } else {
-          Tau_output_iter <- matrix(NA, S, niter)
+          Tau_output_iter <- matrix(NA, niter, S)
         }
       } else {
         Tau_output_iter <- NULL
       }
       
       if(paramsToSave$sigma){
-        sigma_output_iter <- matrix(NA, S, niter)
+        sigma_output_iter <- matrix(NA, niter, S)
       } else {
         sigma_output_iter <- NULL
       }
       
       if(paramsToSave$beta_theta){
-        beta_theta_output_iter <- array(NA, dim = c(S, 2 + ncov_w, niter))
+        beta_theta_output_iter <- array(NA, dim = c(niter, S, 2 + ncov_w))
       } else {
         beta_theta_output_iter <- NULL
       }
       
       if(paramsToSave$theta){
-        theta_output_iter <- array(NA, dim = c(sum(M_site), S, niter))
+        theta_output_iter <- array(NA, dim = c(niter, sum(M_site), S))
       } else {
         theta_output_iter <- NULL
       }
       
       if(paramsToSave$csi){
-        csi_output_iter <- array(NA, dim = c(S, niter))
+        csi_output_iter <- array(NA, dim = c(niter, S))
       } else {
         csi_output_iter <- NULL
       }
       
       if(paramsToSave$delta){
-        delta_output_iter <- array(NA, dim = c(sum(M_site) + emptyTubes, S + S_star, niter))
+        delta_output_iter <- array(NA, dim = c(niter, sum(M_site) + emptyTubes, S + S_star))
       } else {
         delta_output_iter <- NULL
       }
       
       if(paramsToSave$gamma){
-        gamma_output_iter <- array(NA, dim = c(sum(M_site) + emptyTubes, S + S_star, niter))
+        gamma_output_iter <- array(NA, dim = c(niter, sum(M_site) + emptyTubes, S + S_star))
       } else {
         gamma_output_iter <- NULL
       }
       
       if(paramsToSave$r){
-        r_output_iter <- matrix(NA, S + S_star, niter)
+        r_output_iter <- matrix(NA, niter, S + S_star)
       } else {
         r_output_iter <- NULL
       }
       
       if(paramsToSave$p11){
-        p_11_output_iter <- array(NA, dim = c(S + S_star, niter))
+        p_11_output_iter <- array(NA, dim = c(niter, S + S_star))
       } else {
         p_11_output_iter <- NULL
       }
       
       if(paramsToSave$p10){
-        p_10_output_iter <- array(NA, dim = c(S + S_star, niter))
+        p_10_output_iter <- array(NA, dim = c(niter, S + S_star))
       } else {
         p_10_output_iter <- NULL
       }
@@ -714,7 +714,7 @@ fitModel <- function(data,
       }
       
       if(paramsToSave$c_imk){
-        cimk_output_iter <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S  + S_star, niter))
+        cimk_output_iter <- array(NA, dim = c(niter, sum(M_site) + emptyTubes, max(K), S  + S_star))
       } else {
         cimk_output_iter <- NULL
       }
@@ -738,7 +738,7 @@ fitModel <- function(data,
       }
       
       if(paramsToSave$eta){
-        eta_output_iter <- array(NA, dim = c(sum(M_site), max(K), S + S_star, niter))
+        eta_output_iter <- array(NA, dim = c(niter, sum(M_site), max(K), S + S_star))
       } else {
         eta_output_iter <- NULL
       }
@@ -1377,79 +1377,79 @@ fitModel <- function(data,
         trueIter <- (iter - nburn) / nthin
         
         if(paramsToSave$lambda){
-          lambda_output_iter[,trueIter] <- lambda
+          lambda_output_iter[trueIter,] <- lambda
         } 
         
         if(paramsToSave$beta0){
-          beta0_output_iter[,trueIter] <- beta0
+          beta0_output_iter[trueIter,] <- beta0
         } 
         
         if(paramsToSave$mu){
-          mu_output_iter[,trueIter] <- mu
+          mu_output_iter[trueIter,] <- mu
         } 
         
         if(paramsToSave$beta_z){
-          beta_z_output_iter[,,trueIter] <- beta_z
+          beta_z_output_iter[trueIter,,] <- beta_z
         } 
         
         if(paramsToSave$logz){
-          logz_output_iter[,,trueIter] <- logz
+          logz_output_iter[trueIter,,] <- logz
         } 
         
         if(paramsToSave$u){
-          u_output_iter[,,trueIter] <- u
+          u_output_iter[trueIter,,] <- u
         } 
         
         if(paramsToSave$v){
-          v_output_iter[,,trueIter] <- v
+          v_output_iter[trueIter,,] <- v
         } 
         
         if(paramsToSave$beta_w){
-          beta_w_output_iter[,,trueIter] <- beta_w
+          beta_w_output_iter[trueIter,,] <- beta_w
         }  
         
         if(paramsToSave$Tau){
           if(jointSpecies){
             Tau_output_iter[trueIter,,] <- Tau_params$Sigma
           } else {
-            Tau_output_iter[,trueIter] <- tau
+            Tau_output_iter[trueIter,] <- tau
           }
         } 
         
         if(paramsToSave$sigma){
-          sigma_output_iter[,trueIter] <- sigma
+          sigma_output_iter[trueIter,] <- sigma
         } 
         
         if(paramsToSave$beta_theta){
-          beta_theta_output_iter[,,trueIter] <- beta_theta
+          beta_theta_output_iter[trueIter,,] <- beta_theta
         } 
         
         if(paramsToSave$theta){
-          theta_output_iter[,,trueIter] <- theta11
+          theta_output_iter[trueIter,,] <- theta11
         } 
         
         if(paramsToSave$csi){
-          csi_output_iter[,trueIter] <- theta10
+          csi_output_iter[trueIter,] <- theta10
         } 
         
         if(paramsToSave$delta){
-          delta_output_iter[,,trueIter] <- delta
+          delta_output_iter[trueIter,,] <- delta
         } 
         
         if(paramsToSave$gamma){
-          gamma_output_iter[,,trueIter] <- gamma
+          gamma_output_iter[trueIter,,] <- gamma
         }
         
         if(paramsToSave$r){
-          r_output_iter[,trueIter] <- r_nb
+          r_output_iter[trueIter,] <- r_nb
         }
         
         if(paramsToSave$p11){
-          p_11_output_iter[,trueIter] <- p_11
+          p_11_output_iter[trueIter,] <- p_11
         } 
         
         if(paramsToSave$p10){
-          p_10_output_iter[,trueIter] <- p_10
+          p_10_output_iter[trueIter,] <- p_10
         } 
         
         if(paramsToSave$mutilde){
@@ -1457,7 +1457,7 @@ fitModel <- function(data,
         } 
         
         if(paramsToSave$c_imk){
-          cimk_output_iter[,,,trueIter] <- c_imk
+          cimk_output_iter[trueIter,,,] <- c_imk
         } 
         
         if(paramsToSave$mu0){
@@ -1469,11 +1469,11 @@ fitModel <- function(data,
         } 
         
         if(paramsToSave$pi0){
-          pi0_output[chain,] <- pi0_output_iter
+          pi0_output[trueIter] <- pi0_output_iter
         } 
         
         if(paramsToSave$eta){
-          eta_output_iter[,,,trueIter] <- lambda_ijk
+          eta_output_iter[trueIter,,,] <- lambda_ijk
         } 
         
       }
@@ -1614,7 +1614,8 @@ fitModel <- function(data,
   )
   
   data_infos = list(
-    "sites" = sites
+    "sites" = sites,
+    "OTUnames" = dimnames(y)[[3]]
   )
   
   output <- list("params_output" = params_output,
