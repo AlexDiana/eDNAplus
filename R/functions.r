@@ -544,7 +544,10 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
     
     Lambda_beta <- t(X_tilde) %*% invSigma_tilde %*% X_tilde + diag(1 / sigma_beta^2, S * ncol(X_beta))
     
-    mu_beta <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
+    term1 <- invSigma_tilde %*% as.vector(t(logz))
+    txsigmalogz <- t(X_tilde) %*% term1
+    mu_beta <- solve(Lambda_beta) %*% txsigmalogz
+    # mu_beta2 <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
     
     betavec <- t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
     betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
