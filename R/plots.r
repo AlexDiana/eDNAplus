@@ -42,7 +42,7 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
   
   beta_z_output <- modelResults$params_output$beta_z_output
   
-  beta_CI <- apply(beta_z_output, c(2,3), function(x){
+  beta_CI <- apply(beta_z_output, c(3,4), function(x){
     quantile(x, probs = c(.05,.5,.95))
   })
   
@@ -67,9 +67,9 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
   namesSpecies <- OTUnames[orderSignificantSpecies]
   
   ggplot2::ggplot(data = NULL, ggplot2::aes(x = factorSub,
-                          y = beta_CI_subset[2,],
-                          ymin = beta_CI_subset[1,],
-                          ymax = beta_CI_subset[3,])) + geom_errorbar() + 
+                                            y = beta_CI_subset[2,],
+                                            ymin = beta_CI_subset[1,],
+                                            ymax = beta_CI_subset[3,])) + geom_errorbar() + 
     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 20),
                    axis.title = ggplot2::element_text(size = 20, face = "bold"),
                    axis.text = ggplot2::element_text(size = 9, face = "bold", angle = 0),
@@ -77,12 +77,45 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
                    panel.background = ggplot2::element_rect(fill = "white", color = "black")) +
     ggplot2::geom_hline(aes(yintercept = 0), color = "red") + 
     ggplot2::scale_x_discrete(name = "Species", breaks = subsetSpecies,
-                     labels = namesSpecies) +
+                              labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
     ggplot2::scale_y_continuous(name = "Elevation") + ggplot2::coord_flip()
   
 }
+
+FPNP_plot <- function(modelResults, idxSpecies){
+  
+  y_col <- modelResults$data_infos$y[,,idxSpecies]
+  infos <- modelResults$data_infos$infos
+  
+  theta11_mean <- modelResults$params_output$theta11_mean[,,idxSpecies]
+  theta11_col <- apply(theta11_mean, 2, mean)
+  delta_mean <- modelResults$params_output$delta_mean[,,idxSpecies]
+  delta_col <- apply(delta_mean, 2, mean)
+  gamma_mean <- modelResults$params_output$gamma_mean[,,idxSpecies]
+  gamma_col <- apply(gamma_mean, 2, mean)
+  c_imk_mean <- modelResults$params_output$c_imk_mean[,,,idxSpecies]
+  c_imk_col <- apply(c_imk_mean, c(2,3), mean)
+  
+  colnames(y_col) <- c("PCR1","PCR2","PCR2")
+  theta11_col <- data.frame("PresenceProb" = theta11_col)
+  delta_col <- data.frame("MeanPresence" = delta_col[1:nrow(theta11_col)])
+  gamma_col <- data.frame("MeanFP" = gamma_col[1:nrow(theta11_col)])
+  colnames(c_imk_col) <- c("PCR1_state","PCR2_state","PCR2_state")
+  
+  cbind(infos[1:nrow(theta11_col),c(1,2)],
+        y_col[1:nrow(theta11_col),],
+        theta11_col,
+        delta_col,
+        gamma_col,
+        c_imk_col[1:nrow(theta11_col),]
+  )
+  
+}
+
+
+
 
 plotBiomasses <- function(modelResults, datapoly, idxSpecies){
   

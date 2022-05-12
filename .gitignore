@@ -36,6 +36,5 @@ vignettes/*.pdf
 *.knit.md
 
 # Project files
-Data
 Model
 inst/doc

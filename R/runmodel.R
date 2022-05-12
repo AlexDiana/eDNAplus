@@ -175,6 +175,7 @@ cleanData <- function(data){
   }
   
   data <- list("y" = y,
+               "infos" = infos,
                "M_site" = M_site,
                "K" = K,
                "emptyTubes" = emptyTubes,
@@ -237,6 +238,7 @@ fitModel <- function(data,
     v_spikes <- data$v_spikes
     spikedSample <- data$spikedSample
     sites <- data$sites
+    infos <- data$infos
     
     ncov_z <- ncol(X_z)
     ncov_w <- ncol(X_w)
@@ -589,6 +591,15 @@ fitModel <- function(data,
       eta_output <- NULL
     }
     
+    # latent variables means
+    {
+      theta11_mean <- array(0, dim = c(nchain, sum(M_site), S))
+      delta_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, S))
+      gamma_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, S))
+      c_imk_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S))
+    }
+    
+    
   }
   
   for (chain in 1:nchain) {
@@ -743,6 +754,7 @@ fitModel <- function(data,
         eta_output_iter <- NULL
       }
       
+     
     }
     
     # starting values
@@ -1469,13 +1481,22 @@ fitModel <- function(data,
         } 
         
         if(paramsToSave$pi0){
-          pi0_output[trueIter] <- pi0_output_iter
+          pi0_output_iter[trueIter] <- pi0
         } 
         
         if(paramsToSave$eta){
           eta_output_iter[trueIter,,,] <- lambda_ijk
         } 
         
+        theta11_mean[chain,,] <- theta11_mean[chain,,] +
+          (theta11 / niter) 
+        delta_mean[chain,,] <- delta_mean[chain,,] + 
+          (delta[,1:S] / niter)
+        gamma_mean[chain,,] <- gamma_mean[chain,,] + 
+          (gamma[,1:S] / niter)
+        c_imk_mean[chain,,,] <- (c_imk_mean[chain,,,] == 1) + 
+          (c_imk[,,1:S] / niter)
+         
       }
       
     }
@@ -1610,10 +1631,16 @@ fitModel <- function(data,
     "mu0_output" = mu0_output,
     "n0_output" = n0_output,
     "pi0_output" = pi0_output,
-    "eta_output" = eta_output
+    "eta_output" = eta_output,
+    "theta11_mean" = theta11_mean,
+    "delta_mean" = delta_mean,
+    "gamma_mean" = gamma_mean,
+    "c_imk_mean" = c_imk_mean
   )
   
   data_infos = list(
+    "y" = y,
+    "infos" = data$infos,
     "sites" = sites,
     "OTUnames" = dimnames(y)[[3]]
   )
