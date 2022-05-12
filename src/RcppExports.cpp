@@ -836,78 +836,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// update_delta_c_d_rjmcmc_old
-List update_delta_c_d_rjmcmc_old(arma::mat v_pres, arma::cube y, arma::mat v, arma::vec lambda, arma::vec r_nb, arma::vec M_site, arma::vec K, double mu0, double n0, double pi0, double mu_tilde, double n_tilde, arma::mat u, arma::mat logz, arma::mat X_w, arma::mat beta_w, arma::vec sigma, arma::vec mu, double sigma_gamma, double v_sd, arma::vec p11, arma::vec p10, arma::mat theta11, arma::vec theta10, int emptyTubes, int S_star);
-RcppExport SEXP _eDNAPlus_update_delta_c_d_rjmcmc_old(SEXP v_presSEXP, SEXP ySEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP r_nbSEXP, SEXP M_siteSEXP, SEXP KSEXP, SEXP mu0SEXP, SEXP n0SEXP, SEXP pi0SEXP, SEXP mu_tildeSEXP, SEXP n_tildeSEXP, SEXP uSEXP, SEXP logzSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP sigma_gammaSEXP, SEXP v_sdSEXP, SEXP p11SEXP, SEXP p10SEXP, SEXP theta11SEXP, SEXP theta10SEXP, SEXP emptyTubesSEXP, SEXP S_starSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type v_pres(v_presSEXP);
-    Rcpp::traits::input_parameter< arma::cube >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type r_nb(r_nbSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type K(KSEXP);
-    Rcpp::traits::input_parameter< double >::type mu0(mu0SEXP);
-    Rcpp::traits::input_parameter< double >::type n0(n0SEXP);
-    Rcpp::traits::input_parameter< double >::type pi0(pi0SEXP);
-    Rcpp::traits::input_parameter< double >::type mu_tilde(mu_tildeSEXP);
-    Rcpp::traits::input_parameter< double >::type n_tilde(n_tildeSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type u(uSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X_w(X_wSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta_w(beta_wSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma_gamma(sigma_gammaSEXP);
-    Rcpp::traits::input_parameter< double >::type v_sd(v_sdSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type p11(p11SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type p10(p10SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type theta11(theta11SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type theta10(theta10SEXP);
-    Rcpp::traits::input_parameter< int >::type emptyTubes(emptyTubesSEXP);
-    Rcpp::traits::input_parameter< int >::type S_star(S_starSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_delta_c_d_rjmcmc_old(v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star));
-    return rcpp_result_gen;
-END_RCPP
-}
-// update_delta_c_d_rjmcmc_old2
-List update_delta_c_d_rjmcmc_old2(arma::mat v_pres, arma::cube y, arma::mat v, arma::vec lambda, arma::vec r_nb, arma::vec M_site, arma::vec K, double mu0, double n0, double pi0, double mu_tilde, double n_tilde, arma::mat u, arma::mat logz, arma::mat X_w, arma::mat beta_w, arma::vec sigma, arma::vec mu, double sigma_gamma, double v_sd, arma::vec p11, arma::vec p10, arma::mat theta11, arma::vec theta10, int emptyTubes, int S_star);
-RcppExport SEXP _eDNAPlus_update_delta_c_d_rjmcmc_old2(SEXP v_presSEXP, SEXP ySEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP r_nbSEXP, SEXP M_siteSEXP, SEXP KSEXP, SEXP mu0SEXP, SEXP n0SEXP, SEXP pi0SEXP, SEXP mu_tildeSEXP, SEXP n_tildeSEXP, SEXP uSEXP, SEXP logzSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP sigma_gammaSEXP, SEXP v_sdSEXP, SEXP p11SEXP, SEXP p10SEXP, SEXP theta11SEXP, SEXP theta10SEXP, SEXP emptyTubesSEXP, SEXP S_starSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type v_pres(v_presSEXP);
-    Rcpp::traits::input_parameter< arma::cube >::type y(ySEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type r_nb(r_nbSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type K(KSEXP);
-    Rcpp::traits::input_parameter< double >::type mu0(mu0SEXP);
-    Rcpp::traits::input_parameter< double >::type n0(n0SEXP);
-    Rcpp::traits::input_parameter< double >::type pi0(pi0SEXP);
-    Rcpp::traits::input_parameter< double >::type mu_tilde(mu_tildeSEXP);
-    Rcpp::traits::input_parameter< double >::type n_tilde(n_tildeSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type u(uSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X_w(X_wSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta_w(beta_wSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma_gamma(sigma_gammaSEXP);
-    Rcpp::traits::input_parameter< double >::type v_sd(v_sdSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type p11(p11SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type p10(p10SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type theta11(theta11SEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type theta10(theta10SEXP);
-    Rcpp::traits::input_parameter< int >::type emptyTubes(emptyTubesSEXP);
-    Rcpp::traits::input_parameter< int >::type S_star(S_starSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_delta_c_d_rjmcmc_old2(v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star));
-    return rcpp_result_gen;
-END_RCPP
-}
 // update_delta_c_d_rjmcmc
 List update_delta_c_d_rjmcmc(arma::mat v_pres, arma::cube y, arma::mat v, arma::vec lambda, arma::vec r_nb, arma::vec M_site, arma::vec K, double mu0, double n0, double pi0, double mu_tilde, double n_tilde, arma::mat u, arma::mat logz, arma::mat X_w, arma::mat beta_w, arma::vec sigma, arma::vec mu, double sigma_gamma, double v_sd, arma::vec p11, arma::vec p10, arma::mat theta11, arma::vec theta10, arma::mat spikedSample, int emptyTubes, int S_star);
 RcppExport SEXP _eDNAPlus_update_delta_c_d_rjmcmc(SEXP v_presSEXP, SEXP ySEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP r_nbSEXP, SEXP M_siteSEXP, SEXP KSEXP, SEXP mu0SEXP, SEXP n0SEXP, SEXP pi0SEXP, SEXP mu_tildeSEXP, SEXP n_tildeSEXP, SEXP uSEXP, SEXP logzSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP sigmaSEXP, SEXP muSEXP, SEXP sigma_gammaSEXP, SEXP v_sdSEXP, SEXP p11SEXP, SEXP p10SEXP, SEXP theta11SEXP, SEXP theta10SEXP, SEXP spikedSampleSEXP, SEXP emptyTubesSEXP, SEXP S_starSEXP) {
@@ -1071,8 +999,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_compute_logprob_y_delta0_cpp", (DL_FUNC) &_eDNAPlus_compute_logprob_y_delta0_cpp, 9},
     {"_eDNAPlus_DecToBin_cpp", (DL_FUNC) &_eDNAPlus_DecToBin_cpp, 2},
     {"_eDNAPlus_compute_logprob_y_delta1_rnb_cpp", (DL_FUNC) &_eDNAPlus_compute_logprob_y_delta1_rnb_cpp, 12},
-    {"_eDNAPlus_update_delta_c_d_rjmcmc_old", (DL_FUNC) &_eDNAPlus_update_delta_c_d_rjmcmc_old, 26},
-    {"_eDNAPlus_update_delta_c_d_rjmcmc_old2", (DL_FUNC) &_eDNAPlus_update_delta_c_d_rjmcmc_old2, 26},
     {"_eDNAPlus_update_delta_c_d_rjmcmc", (DL_FUNC) &_eDNAPlus_update_delta_c_d_rjmcmc, 27},
     {"_eDNAPlus_convertDeltaIndexes", (DL_FUNC) &_eDNAPlus_convertDeltaIndexes, 4},
     {"_eDNAPlus_convertIndexToDeltaGammaC", (DL_FUNC) &_eDNAPlus_convertIndexToDeltaGammaC, 2},

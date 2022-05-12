@@ -372,7 +372,7 @@ update_lambda0_mixt <- function(y, c_imk, mu0, n0, sd_mu0 = .05, sd_n0 = .025){
   mu0_star <- rnorm(1, mu0, sd_mu0)
   n0_star <- rnorm(1, n0, sd_n0)
   
-  if(n0_star > 0 & mu0_star > 0){
+  if(n0_star > 1 & mu0_star > 0){
     lik_star <- sum(dnbinom(nonzeroPCRcounts, mu = mu0_star, size = n0_star, log = T))
     lik_current <- sum(dnbinom(nonzeroPCRcounts, mu = mu0, size = n0, log = T))
     

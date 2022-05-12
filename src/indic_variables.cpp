@@ -246,7 +246,6 @@ double compute_logprob_y_delta1_rnb_cpp(arma::vec y_counts, arma::vec c_imk_curr
   return(sum);
 }
 
-// [[Rcpp::export]]
 List update_delta_c_d_rjmcmc_old(arma::mat v_pres,
                                  arma::cube y, 
                                  arma::mat v, 
@@ -776,7 +775,7 @@ List update_delta_c_d_rjmcmc_old(arma::mat v_pres,
                       _["v"] = v);
 }
 
-// [[Rcpp::export]]
+
 List update_delta_c_d_rjmcmc_old2(arma::mat v_pres,
                                   arma::cube y, 
                                   arma::mat v, 

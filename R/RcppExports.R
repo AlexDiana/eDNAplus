@@ -181,14 +181,6 @@ compute_logprob_y_delta1_rnb_cpp <- function(y_counts, c_imk_current, currentK, 
     .Call(`_eDNAPlus_compute_logprob_y_delta1_rnb_cpp`, y_counts, c_imk_current, currentK, n0, mu0, pi0, r_nb, v_im, n_tilde, mu_tilde, lambda, u_im)
 }
 
-update_delta_c_d_rjmcmc_old <- function(v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star) {
-    .Call(`_eDNAPlus_update_delta_c_d_rjmcmc_old`, v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star)
-}
-
-update_delta_c_d_rjmcmc_old2 <- function(v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star) {
-    .Call(`_eDNAPlus_update_delta_c_d_rjmcmc_old2`, v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, emptyTubes, S_star)
-}
-
 update_delta_c_d_rjmcmc <- function(v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, spikedSample, emptyTubes, S_star) {
     .Call(`_eDNAPlus_update_delta_c_d_rjmcmc`, v_pres, y, v, lambda, r_nb, M_site, K, mu0, n0, pi0, mu_tilde, n_tilde, u, logz, X_w, beta_w, sigma, mu, sigma_gamma, v_sd, p11, p10, theta11, theta10, spikedSample, emptyTubes, S_star)
 }

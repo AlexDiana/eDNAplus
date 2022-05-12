@@ -14,7 +14,8 @@ Imports:
   GIGrvg
 Depends: 
  ggplot2,
-  MASS
+  MASS,
+  Matrix
 LinkingTo: Rcpp, RcppArmadillo
 LazyData: true
 Suggests: 

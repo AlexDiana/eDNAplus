@@ -2609,7 +2609,7 @@ update_delta_c_d <- function(delta, gamma, c_imk, y, v, u,
         # delta = 0, gamma = 0
         for (l in 1:(2^currentK)) {
           
-          c_imk_current <- 2 * DecToBin(l - 1, currentK)
+          c_imk_current <- 2 * DecToBin_cpp(l - 1, currentK)
           
           log_prob_y <- compute_logprob_y_delta0_cpp(y_counts,
                                                      c_imk_current,
@@ -2617,6 +2617,12 @@ update_delta_c_d <- function(delta, gamma, c_imk, y, v, u,
                                                      n0, mu0, pi0,
                                                      n_tilde, mu_tilde, 
                                                      lambda[j])
+          # compute_logprob_y_delta0_cpp(y_counts,
+          #                                            c_imk_current,
+          #                                            currentK,
+          #                                            n0, mu0, pi0,
+          #                                            n_tilde, mu_tilde, 
+          #                                            lambda[j])
           
           prob_delta_gamma <- log(1 - theta11[m + sum(M_site[seq_len(i-1)]),j]) + 
             log(1 - theta10[j])
@@ -2631,9 +2637,10 @@ update_delta_c_d <- function(delta, gamma, c_imk, y, v, u,
         # delta = 1
         for (l in 1:(2^currentK)) {
           
-          c_imk_current <- DecToBin(l - 1, currentK)
+          c_imk_current <- DecToBin_cpp(l - 1, currentK)
           
-          log_prob_y <- compute_logprob_y_delta1_rnb_cpp(y_counts, c_imk_current, 
+          log_prob_y <- compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                         c_imk_current,
                                                          currentK, n0, mu0, pi0,
                                                          r_nb[j],
                                                          v_star,
@@ -2650,13 +2657,12 @@ update_delta_c_d <- function(delta, gamma, c_imk, y, v, u,
           mat_delta_c_d[2^currentK + l,] <- c(1,0,c_imk_current)
           log_allProbs[2^currentK + l] <- log_prob_y + prob_delta + prob_c + log_prior_v
           
-          
         }
         
         # gamma = 1
         for (l in 1:(2^currentK)) {
           
-          c_imk_current <- DecToBin(l - 1, currentK)
+          c_imk_current <- DecToBin_cpp(l - 1, currentK)
           
           log_prob_y <- compute_logprob_y_delta1_rnb_cpp(y_counts, c_imk_current, 
                                                          currentK, n0, mu0, pi0,
