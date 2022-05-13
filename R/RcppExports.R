@@ -165,6 +165,10 @@ update_lambdaijk <- function(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K
     .Call(`_eDNAPlus_update_lambdaijk`, lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K, S_star, emptyTubes)
 }
 
+dnbinom_mean <- function(x, n, mu) {
+    .Call(`_eDNAPlus_dnbinom_mean`, x, n, mu)
+}
+
 sample_cpp <- function(x, probs) {
     .Call(`_eDNAPlus_sample_cpp`, x, probs)
 }

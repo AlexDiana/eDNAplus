@@ -771,6 +771,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dnbinom_mean
+double dnbinom_mean(int x, double n, double mu);
+RcppExport SEXP _eDNAPlus_dnbinom_mean(SEXP xSEXP, SEXP nSEXP, SEXP muSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    rcpp_result_gen = Rcpp::wrap(dnbinom_mean(x, n, mu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sample_cpp
 int sample_cpp(arma::vec x, arma::vec probs);
 RcppExport SEXP _eDNAPlus_sample_cpp(SEXP xSEXP, SEXP probsSEXP) {
@@ -995,6 +1008,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_update_uv_poisgamma_cpp", (DL_FUNC) &_eDNAPlus_update_uv_poisgamma_cpp, 23},
     {"_eDNAPlus_update_r_nb_cpp", (DL_FUNC) &_eDNAPlus_update_r_nb_cpp, 12},
     {"_eDNAPlus_update_lambdaijk", (DL_FUNC) &_eDNAPlus_update_lambdaijk, 11},
+    {"_eDNAPlus_dnbinom_mean", (DL_FUNC) &_eDNAPlus_dnbinom_mean, 3},
     {"_eDNAPlus_sample_cpp", (DL_FUNC) &_eDNAPlus_sample_cpp, 2},
     {"_eDNAPlus_compute_logprob_y_delta0_cpp", (DL_FUNC) &_eDNAPlus_compute_logprob_y_delta0_cpp, 9},
     {"_eDNAPlus_DecToBin_cpp", (DL_FUNC) &_eDNAPlus_DecToBin_cpp, 2},
