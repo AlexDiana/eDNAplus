@@ -393,23 +393,66 @@ update_lambda_tilde_NB <- function(y, c_imk, mu_tilde, n_tilde, sd_mu0 = 1, sd_n
   nonPCRcounts <- as.vector(y)[as.vector(c_imk) == 2]
   nonPCRcounts <- nonPCRcounts[!is.na(nonPCRcounts)]
   
-  # propose new sets of parameters
-  mu_tilde_star <- rnorm(1, mu_tilde, sd_mu0)
-  n_tilde_star <- exp(rnorm(1, log(n_tilde), sd_n0))
+  # random walk
+  {
+    # propose new sets of parameters
+    mu_tilde_star <- rnorm(1, mu_tilde, sd_mu0)
+    n_tilde_star <- exp(rnorm(1, log(n_tilde), sd_n0))
+    
+    if(n_tilde_star > 0 & mu_tilde_star > 0){
+      
+      lik_star <- sum(dnbinom(nonPCRcounts, mu = mu_tilde_star, size = n_tilde_star, log = T)) #+ 
+      # n_tilde_star
+      lik_current <- sum(dnbinom(nonPCRcounts, mu = mu_tilde, size = n_tilde, log = T)) #+ 
+      # n_tilde
+      
+      logproposal <- 0#log(n_tilde_star) - log(n_tilde)
+      
+      if(runif(1) < exp(lik_star - lik_current + logproposal)){
+        mu_tilde <- mu_tilde_star
+        n_tilde <- n_tilde_star
+      }
+      
+    }  
+  }
   
-  if(n_tilde_star > 1 & mu_tilde_star > 0){
-    lik_star <- sum(dnbinom(nonPCRcounts, mu = mu_tilde_star, size = n_tilde_star, log = T)) + 
-      n_tilde_star
-    lik_current <- sum(dnbinom(nonPCRcounts, mu = mu_tilde, size = n_tilde, log = T)) + 
-      n_tilde
+  # mle centred
+  {
+    # propose new sets of parameters
     
-    logproposal <- log(n_tilde_star) - log(n_tilde)
-    
-    if(runif(1) < exp(lik_star - lik_current + logproposal)){
-      mu_tilde <- mu_tilde_star
-      n_tilde <- n_tilde_star
+    mu_tilde_pros <- mean(nonPCRcounts)
+    n_tilde_pros <-  mean(nonPCRcounts)^2 / (var(nonPCRcounts) - mean(nonPCRcounts))
+    if(n_tilde_pros < 0){
+      n_tilde_pros <- 10
     }
     
+    df_t <- 3
+    
+    sd_mu <- 10
+    sd_logn <- 1
+    mu_tilde_star <- rt2(mu_tilde_pros, sd_mu, df = df_t)
+    n_tilde_star <-  exp(rt2(log(n_tilde_pros), sd_logn, df = df_t))
+    
+    if(n_tilde_star > 0 & mu_tilde_star > 0){
+      
+      lik_star <- sum(dnbinom(nonPCRcounts, mu = mu_tilde_star, size = n_tilde_star, log = T)) #+ 
+      # n_tilde_star
+      lik_current <- sum(dnbinom(nonPCRcounts, mu = mu_tilde, size = n_tilde, log = T)) #+ 
+      # n_tilde
+      
+      logproposal_new <- log(dt2(mu_tilde_star, mu_tilde_pros, sd_mu, df_t)) +
+        log(dt2(log(n_tilde_star), n_tilde_pros, sd_logn, df_t))
+      logproposal_current <- log(dt2(mu_tilde, mu_tilde_pros, sd_mu, df_t)) +
+        log(dt2(log(n_tilde), n_tilde_pros, sd_logn, df_t))
+      
+      logproposal <- logproposal_current - logproposal_new
+      
+      if(runif(1) < exp(lik_star - lik_current + logproposal)){
+        mu_tilde <- mu_tilde_star
+        n_tilde <- n_tilde_star
+      }
+      
+    }  
   }
   
   list("mu_tilde" = mu_tilde,
