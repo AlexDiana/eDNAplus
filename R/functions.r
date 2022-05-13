@@ -455,8 +455,8 @@ update_lambda_tilde_NB <- function(y, c_imk, mu_tilde, n_tilde, sd_mu0 = 1, sd_n
     }  
   }
   
-  list("mu_tilde" = mu_tilde,
-       "n_tilde" = n_tilde)
+  list("n_tilde" = n_tilde,
+       "mu_tilde" = mu_tilde)
 }
 
 # TAU ---------------------------------------------------------------------
