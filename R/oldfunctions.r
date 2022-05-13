@@ -2599,7 +2599,11 @@ update_delta_c_d <- function(delta, gamma, c_imk, y, v, u,
         if(v_pres[m + sum(M_site[seq_len(i-1)]), j] == 1){
           v_star <- v[m + sum(M_site[seq_len(i-1)]), j]
         } else {
-          v_star <- 0
+          mean_v = log(mean(y_counts / exp(lambda[j] + u_im)))
+          
+          v_sd = .05
+          v_star = rnorm(1, mean_v, v_sd)
+            
         }
         
         

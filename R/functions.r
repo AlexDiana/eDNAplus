@@ -593,7 +593,7 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
     # mu_beta2 <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
     
     betavec <- t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
-    betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
+    betamat <- matrix(betavec, ncol(X_beta), S, byrow = T)
     
     #
     
