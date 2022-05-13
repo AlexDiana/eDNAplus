@@ -89,33 +89,34 @@ FPNP_plot <- function(modelResults, idxSpecies){
   y_col <- modelResults$data_infos$y[,,idxSpecies]
   infos <- modelResults$data_infos$infos
   
-  theta11_mean <- modelResults$params_output$theta11_mean[,,idxSpecies]
-  theta11_col <- apply(theta11_mean, 2, mean)
-  delta_mean <- modelResults$params_output$delta_mean[,,idxSpecies]
+  delta_mean <- modelResults$params_output$delta_mean[,,idxSpecies,drop=F]
   delta_col <- apply(delta_mean, 2, mean)
-  gamma_mean <- modelResults$params_output$gamma_mean[,,idxSpecies]
+  gamma_mean <- modelResults$params_output$gamma_mean[,,idxSpecies,drop=F]
   gamma_col <- apply(gamma_mean, 2, mean)
-  c_imk_mean <- modelResults$params_output$c_imk_mean[,,,idxSpecies]
-  c_imk_col <- apply(c_imk_mean, c(2,3), mean)
+  theta11_mean <- modelResults$params_output$theta11_mean[,,idxSpecies,drop=F]
+  theta11_col <- c(apply(theta11_mean, 2, mean), rep(0, length(delta_mean) - length(theta11_mean)))
+  c_imk1_mean <- modelResults$params_output$c_imk1_mean[,,,idxSpecies,drop=F]
+  c_imk1_col <- apply(c_imk1_mean, c(2,3), mean)
+  c_imk2_mean <- modelResults$params_output$c_imk2_mean[,,,idxSpecies,drop=F]
+  c_imk2_col <- apply(c_imk2_mean, c(2,3), mean)
   
   colnames(y_col) <- c("PCR1","PCR2","PCR2")
   theta11_col <- data.frame("PresenceProb" = theta11_col)
-  delta_col <- data.frame("MeanPresence" = delta_col[1:nrow(theta11_col)])
-  gamma_col <- data.frame("MeanFP" = gamma_col[1:nrow(theta11_col)])
-  colnames(c_imk_col) <- c("PCR1_state","PCR2_state","PCR2_state")
+  delta_col <- data.frame("MeanPresence" = delta_col)
+  gamma_col <- data.frame("MeanFP" = gamma_col)
+  colnames(c_imk1_col) <- c("PCR1_state","PCR2_state","PCR2_state")
+  colnames(c_imk2_col) <- c("PCR1_state","PCR2_state","PCR2_state")
   
-  cbind(infos[1:nrow(theta11_col),c(1,2)],
-        y_col[1:nrow(theta11_col),],
+  cbind(infos[,c(1,2)],
+        y_col,
         theta11_col,
         delta_col,
         gamma_col,
-        c_imk_col[1:nrow(theta11_col),]
+        c_imk1_col,
+        c_imk2_col
   )
   
 }
-
-
-
 
 plotBiomasses <- function(modelResults, datapoly, idxSpecies){
   

@@ -596,7 +596,8 @@ fitModel <- function(data,
       theta11_mean <- array(0, dim = c(nchain, sum(M_site), S))
       delta_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, S))
       gamma_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, S))
-      c_imk_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S))
+      c_imk1_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S))
+      c_imk2_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S))
     }
     
     
@@ -1494,8 +1495,10 @@ fitModel <- function(data,
           (delta[,1:S] / niter)
         gamma_mean[chain,,] <- gamma_mean[chain,,] + 
           (gamma[,1:S] / niter)
-        c_imk_mean[chain,,,] <- (c_imk_mean[chain,,,] == 1) + 
-          (c_imk[,,1:S] / niter)
+        c_imk1_mean[chain,,,] <- (c_imk1_mean[chain,,,]) + 
+          (c_imk[,,1:S] == 1) / niter
+        c_imk2_mean[chain,,,] <- (c_imk2_mean[chain,,,]) + 
+          (c_imk[,,1:S] == 2) / niter
          
       }
       
@@ -1635,7 +1638,8 @@ fitModel <- function(data,
     "theta11_mean" = theta11_mean,
     "delta_mean" = delta_mean,
     "gamma_mean" = gamma_mean,
-    "c_imk_mean" = c_imk_mean
+    "c_imk1_mean" = c_imk1_mean,
+    "c_imk2_mean" = c_imk2_mean
   )
   
   data_infos = list(

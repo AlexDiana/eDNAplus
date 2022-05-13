@@ -5,12 +5,29 @@
 using namespace Rcpp;
 
 // [[Rcpp::depends(RcppArmadillo)]]
+// 
+// // [[Rcpp::export]]
+// double dnbinom_mean(int x, double n, double mu){
+//   
+//   double pi = n / (n + mu);
+// 
+//   return(R::dnbinom(x, n, pi, 1));
+// }
 
+// [[Rcpp::export]]
 double dnbinom_mean(int x, double n, double mu){
   
-  double pi = n / (n + mu);
-  
-  return(R::dnbinom(x, n, pi, 1));
+  // double pi = n / (n + mu);
+  double logpi1 = log(n);
+  double logpi10 = log(mu);
+  double logpi2 = log(n + mu);
+  // R::lf
+  // R::lgamma1p()
+  double term1 = R::lgammafn(x + n) - R::lgammafn(n) - R::lgammafn(x + 1);
+  double term2 = n * (logpi1 - logpi2);
+  double term3 = x * (logpi10 - logpi2);
+  // Rcout << term1 << " - " << term2 << " - " << term3 << std::endl;
+  return(term1 + term2 + term3);
 }
 
 // [[Rcpp::export]]

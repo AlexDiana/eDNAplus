@@ -4704,7 +4704,9 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
         
       } else {
         
-        r_new = R::rnorm(r_nb[j], sd_r_proposal);
+        r_new = exp(R::rnorm(log(r_nb[j]), sd_r_proposal));
+        
+        logproposal_diff = log(r_new) - log(r_nb[j]);
         
       }
       
@@ -4713,15 +4715,18 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
       
       // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
       // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
-      double logprior_new = r_new;//R::dnorm(r_new, mean_r, sd_r, 1);
+      double logprior_new = 0;//r_new;//R::dnorm(r_new, mean_r, sd_r, 1);
       // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
-      double logprior_current = r_nb[j];//R::dnorm(r_nb[j], mean_r, sd_r, 1);
+      double logprior_current = 0;//r_nb[j];//R::dnorm(r_nb[j], mean_r, sd_r, 1);
       // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
       
-      double logposterior_new = loglik_new + logprior_new;
-      double logposterior_current = loglik_current + logprior_current;
+      double logproposal_new = - log(r_new);
+      double logproposal_current = - log(r_nb[j]);
       
-      if(R::runif(0, 1) < exp(logproposal_diff + logposterior_new - logposterior_current)){
+      double logposterior_new = loglik_new + logprior_new + logproposal_current;
+      double logposterior_current = loglik_current + logprior_current + logproposal_new;
+      
+      if(R::runif(0, 1) < exp(logposterior_new - logposterior_current)){
         r_nb[j] = r_new;
       }
       

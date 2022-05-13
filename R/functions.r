@@ -6,8 +6,6 @@ logistic <- function(x){
 
 # LAMBDA ----------
 
-
-
 update_lambda_CP <- function(beta0, beta_z, logz, 
                              mu, lambda, v, u, lambda_ijk, r_nb,
                              c_imk, delta, gamma, X_w, beta_theta, 
@@ -397,15 +395,17 @@ update_lambda_tilde_NB <- function(y, c_imk, mu_tilde, n_tilde, sd_mu0 = 1, sd_n
   
   # propose new sets of parameters
   mu_tilde_star <- rnorm(1, mu_tilde, sd_mu0)
-  n_tilde_star <- n_tilde#rnorm(1, n_tilde, sd_n0)
+  n_tilde_star <- exp(rnorm(1, log(n_tilde), sd_n0))
   
-  if(n_tilde_star > 0 & mu_tilde_star > 0){
+  if(n_tilde_star > 1 & mu_tilde_star > 0){
     lik_star <- sum(dnbinom(nonPCRcounts, mu = mu_tilde_star, size = n_tilde_star, log = T)) + 
       n_tilde_star
     lik_current <- sum(dnbinom(nonPCRcounts, mu = mu_tilde, size = n_tilde, log = T)) + 
       n_tilde
     
-    if(runif(1) < exp(lik_star - lik_current)){
+    logproposal <- log(n_tilde_star) - log(n_tilde)
+    
+    if(runif(1) < exp(lik_star - lik_current + logproposal)){
       mu_tilde <- mu_tilde_star
       n_tilde <- n_tilde_star
     }
