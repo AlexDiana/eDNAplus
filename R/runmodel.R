@@ -277,6 +277,9 @@ fitModel <- function(data,
       a_sigma <- 3
       b_sigma <- 2
       
+      mean_ntilde <- 100
+      sd_ntilde <- 100
+      
       sigma_beta <- 1
       
       sigma_mu <- 1
@@ -1050,7 +1053,7 @@ fitModel <- function(data,
     }
     
     for (iter in 1:(nburn + nthin * niter)) {
-      print(min(lambda))
+      print(n_tilde)
       if(iter <= nburn){
         print(paste0("Chain = ",chain," - Burn-in Iteration = ",iter))
       } else {
@@ -1329,7 +1332,8 @@ fitModel <- function(data,
         # print("Update lambda tilde")
         
         # lambdatilde <- update_lambdatilde(y, c_imk, lambda)
-        list_lambda_tilde <- update_lambda_tilde_NB(y, c_imk, mu_tilde, n_tilde, sd_mu0 = 1, sd_n0 = 1)
+        list_lambda_tilde <- update_lambda_tilde_NB(y, c_imk, mu_tilde, n_tilde, mean_ntilde,
+                                                    sd_ntilde, sd_mu0 = 1, sd_n0 = 1)
         mu_tilde <- list_lambda_tilde$mu_tilde
         n_tilde <- list_lambda_tilde$n_tilde
       }
