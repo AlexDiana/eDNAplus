@@ -147,7 +147,7 @@ plotBiomasses <- function(modelResults, datapoly, idxSpecies){
 
 plotCorrelationMatrix <- function(modelResults, 
                                   idxSpecies = NULL,
-                                  numSigSpecies = 0){
+                                  numSigCorrs = 0){
   
   jointSpecies <- modelResults$data_infos$jointSpecies
   
@@ -158,33 +158,12 @@ plotCorrelationMatrix <- function(modelResults,
     
     niter <- dim(Tau_output)[1]
     S <- dim(Tau_output)[2]
-    
-    # Tau_corr_output_list <- lapply(1:niter, function(i){
-    #   stats::cov2cor(Tau_output[i,,])
-    # })
-    # 
-    # Tau_corr_output <- array(NA, dim = c(niter, S, S))
-    # for (iter in 1:niter) {
-    #   Tau_corr_output[iter,,] <- Tau_corr_output_list[[iter]]
-    # }
-    
+
     Tau_CI <- apply(Tau_output, c(2,3), function(x){
       quantile(x, probs = c(0.025, 0.975, .5))
     })
     
-    # cor_Tau <- Tau_mean
-    # 
-    # for (i in 1:S) {
-    #   for (j in seq_len(i)) {
-    #     cor_Tau[i,j] <- Tau_mean[i,j] / (sqrt(Tau_mean[i,i]) * sqrt(Tau_mean[j,j]))
-    #     cor_Tau[j,i] <- cor_Tau[i,j]
-    #   }
-    # }
-    # 
-    # dimnames(cor_Tau) <- list(colnames(OTU),
-    # colnames(OTU))
-    
-    if(!missing(speciesSubset)){
+    if(!is.null(speciesIdx)){
       
       Tau_CI_long <- matrix(NA, S * (S - 1) / 2, 5)
       l <- 1
@@ -213,25 +192,28 @@ plotCorrelationMatrix <- function(modelResults,
                                             Tau_CI_long_significants[,2],
                                             Tau_CI_long_significants[,1])))
         Tau_CI_long_ordered <- 
-          Tau_CI_long_significants[order(Tau_CI_long_significants[,3]),]
+          Tau_CI_long_significants[orderSignificantCorrelations,]
         
-        biggestSpecies_idx <- which((cor_Tau_long_ordered[,3] < 0 & cor_Tau_long_ordered[,2] < -0.5) | 
-                                      (cor_Tau_long_ordered[,3] > 0 & cor_Tau_long_ordered[,1] > 0.5))
-        
-        biggestSpecies <- cor_Tau_long_ordered[biggestSpecies_idx,4:5]
-        idxSpecies <- unique(as.vector(biggestSpecies))
+        if(numSigCorrs > 0){
+          speciesIdx <- unique(as.vector(Tau_CI_long_ordered[1:numSigCorrs,4:5])  )
+        } else {
+          speciesIdx <- unique(as.vector(Tau_CI_long_ordered[,4:5]))
+        }
         
       }
-      
       
     } 
     
     Tau_CI_median <- Tau_CI[3,,]
     Taucorr_CI_median <- stats::cov2cor(Tau_CI_median)
-    cov_to_plot <- Tau_CI[3, idxSpecies, idxSpecies]
+    corr_to_plot <- Taucorr_CI_median[speciesIdx, speciesIdx]
     
+    OTUnames <- modelResults$data_infos$OTUnames
     
-    corrplot::corrplot(corr_to_plot)  
+    rownames(corr_to_plot) <- OTUnames[speciesIdx]
+    colnames(corr_to_plot) <- OTUnames[speciesIdx]
+    
+    return(ggcorrplot::ggcorrplot(corr_to_plot))
     
   } else {
     
