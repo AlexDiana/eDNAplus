@@ -145,3 +145,98 @@ plotBiomasses <- function(modelResults, datapoly, idxSpecies){
 }
 
 
+plotCorrelationMatrix <- function(modelResults, 
+                                  idxSpecies = NULL,
+                                  numSigSpecies = 0){
+  
+  jointSpecies <- modelResults$data_infos$jointSpecies
+  
+  if(jointSpecies){
+    
+    Tau_output <- modelResults$params_output$Tau_output
+    Tau_output <- apply(Tau_output, c(3,4), c)
+    
+    niter <- dim(Tau_output)[1]
+    S <- dim(Tau_output)[2]
+    
+    # Tau_corr_output_list <- lapply(1:niter, function(i){
+    #   stats::cov2cor(Tau_output[i,,])
+    # })
+    # 
+    # Tau_corr_output <- array(NA, dim = c(niter, S, S))
+    # for (iter in 1:niter) {
+    #   Tau_corr_output[iter,,] <- Tau_corr_output_list[[iter]]
+    # }
+    
+    Tau_CI <- apply(Tau_output, c(2,3), function(x){
+      quantile(x, probs = c(0.025, 0.975, .5))
+    })
+    
+    # cor_Tau <- Tau_mean
+    # 
+    # for (i in 1:S) {
+    #   for (j in seq_len(i)) {
+    #     cor_Tau[i,j] <- Tau_mean[i,j] / (sqrt(Tau_mean[i,i]) * sqrt(Tau_mean[j,j]))
+    #     cor_Tau[j,i] <- cor_Tau[i,j]
+    #   }
+    # }
+    # 
+    # dimnames(cor_Tau) <- list(colnames(OTU),
+    # colnames(OTU))
+    
+    if(!missing(speciesSubset)){
+      
+      Tau_CI_long <- matrix(NA, S * (S - 1) / 2, 5)
+      l <- 1
+      for (i in 1:S) {
+        for (j in seq_len(i - 1)) {
+          Tau_CI_long[l,1] <- Tau_CI[1,i,j]
+          Tau_CI_long[l,2] <- Tau_CI[2,i,j]
+          Tau_CI_long[l,3] <- Tau_CI[3,i,j]
+          Tau_CI_long[l,4] <- i
+          Tau_CI_long[l,5] <- j
+          l <- l + 1
+        }
+      }
+      
+      significantCorrelations <- 
+        which((Tau_CI_long[,1] < 0 & Tau_CI_long[,2] < 0) | 
+                (Tau_CI_long[,1] > 0 & Tau_CI_long[,2] > 0) )
+      
+      if(length(significantCorrelations) == 0){
+        print("No significant correlations")
+      } else {
+        
+        Tau_CI_long_significants <- Tau_CI_long[significantCorrelations,]
+        
+        orderSignificantCorrelations <- order(-abs(ifelse(Tau_CI_long_significants[,3] < 0,
+                                            Tau_CI_long_significants[,2],
+                                            Tau_CI_long_significants[,1])))
+        Tau_CI_long_ordered <- 
+          Tau_CI_long_significants[order(Tau_CI_long_significants[,3]),]
+        
+        biggestSpecies_idx <- which((cor_Tau_long_ordered[,3] < 0 & cor_Tau_long_ordered[,2] < -0.5) | 
+                                      (cor_Tau_long_ordered[,3] > 0 & cor_Tau_long_ordered[,1] > 0.5))
+        
+        biggestSpecies <- cor_Tau_long_ordered[biggestSpecies_idx,4:5]
+        idxSpecies <- unique(as.vector(biggestSpecies))
+        
+      }
+      
+      
+    } 
+    
+    Tau_CI_median <- Tau_CI[3,,]
+    Taucorr_CI_median <- stats::cov2cor(Tau_CI_median)
+    cov_to_plot <- Tau_CI[3, idxSpecies, idxSpecies]
+    
+    
+    corrplot::corrplot(corr_to_plot)  
+    
+  } else {
+    
+    print("Species correlation not selected when running the model")
+    
+  }
+  
+}

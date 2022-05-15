@@ -4634,6 +4634,8 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
                           arma::cube &c_imk,
                           arma::vec M_site,
                           arma::vec K,
+                          double mean_r,
+                          double sd_r,
                           bool optimStep,
                           double sd_r_proposal){
   
@@ -4706,29 +4708,32 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
         
         r_new = exp(R::rnorm(log(r_nb[j]), sd_r_proposal));
         
-        logproposal_diff = log(r_new) - log(r_nb[j]);
+        logproposal_diff = 0;//log(r_new) - log(r_nb[j]);
         
       }
       
-      double loglik_new = loglik_r(r_new, y_present, mean_uv);
-      double loglik_current = loglik_r(r_nb[j], y_present, mean_uv);
-      
-      // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
-      // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
-      double logprior_new = 0;//r_new;//R::dnorm(r_new, mean_r, sd_r, 1);
-      // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
-      double logprior_current = 0;//r_nb[j];//R::dnorm(r_nb[j], mean_r, sd_r, 1);
-      // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
-      
-      double logproposal_new = - log(r_new);
-      double logproposal_current = - log(r_nb[j]);
-      
-      double logposterior_new = loglik_new + logprior_new + logproposal_current;
-      double logposterior_current = loglik_current + logprior_current + logproposal_new;
-      
-      if(R::runif(0, 1) < exp(logposterior_new - logposterior_current)){
-        r_nb[j] = r_new;
+      if(r_new < exp(15)){
+        double loglik_new = loglik_r(r_new, y_present, mean_uv);
+        double loglik_current = loglik_r(r_nb[j], y_present, mean_uv);
+        
+        // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
+        // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
+        double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
+        // double logprior_new = R::dnorm(r_new, mean_r, sd_r, 1);
+        double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
+        // double logprior_current = R::dnorm(r_nb[j], mean_r, sd_r, 1);
+        
+        double logproposal_new = 0;//- log(r_new);
+        double logproposal_current = 0;//- log(r_nb[j]);
+        
+        double logposterior_new = loglik_new + logprior_new + logproposal_current;
+        double logposterior_current = loglik_current + logprior_current + logproposal_new;
+        
+        if(R::runif(0, 1) < exp(logposterior_new - logposterior_current)){
+          r_nb[j] = r_new;
+        }
       }
+      
       
     }
     

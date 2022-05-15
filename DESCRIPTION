@@ -11,7 +11,8 @@ Encoding: UTF-8
 RoxygenNote: 7.1.2
 Imports: 
   Rcpp (>= 1.0.7),
-  GIGrvg
+  GIGrvg,
+  corrplot
 Depends: 
  ggplot2,
   MASS,
