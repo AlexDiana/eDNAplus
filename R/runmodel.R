@@ -277,6 +277,9 @@ fitModel <- function(data,
       a_sigma <- 3
       b_sigma <- 2
       
+      mean_r <- 100
+      sd_r <- 100
+      
       mean_ntilde <- 100
       sd_ntilde <- 100
       
@@ -1283,6 +1286,7 @@ fitModel <- function(data,
         
         r_nb <- update_r_nb_cpp(r_nb, lambda, u,
                                 v, y, delta, gamma, c_imk, M_site, K,
+                                mean_r, sd_r,
                                 optimStep =  F,
                                 sd_r_proposal = .05)
         
@@ -1650,7 +1654,8 @@ fitModel <- function(data,
     "y" = y,
     "infos" = data$infos,
     "sites" = sites,
-    "OTUnames" = dimnames(y)[[3]]
+    "OTUnames" = dimnames(y)[[3]],
+    "jointSpecies" = jointSpecies
   )
   
   output <- list("params_output" = params_output,
