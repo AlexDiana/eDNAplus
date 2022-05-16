@@ -157,8 +157,8 @@ update_uv_poisgamma_cpp <- function(u, v, logz, lambda, X_z, beta_theta, beta_z,
     .Call(`_eDNAPlus_update_uv_poisgamma_cpp`, u, v, logz, lambda, X_z, beta_theta, beta_z, beta0, r_nb, mu, lambda_ijk, c_imk, delta, gamma, sigma, sigma_gamma, sigma_u, M_site, X_w, beta_w, K, S_star, emptyTubes)
 }
 
-update_r_nb_cpp <- function(r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, optimStep, sd_r_proposal) {
-    .Call(`_eDNAPlus_update_r_nb_cpp`, r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, optimStep, sd_r_proposal)
+update_r_nb_cpp <- function(r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, mean_r, sd_r, optimStep, sd_r_proposal) {
+    .Call(`_eDNAPlus_update_r_nb_cpp`, r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, mean_r, sd_r, optimStep, sd_r_proposal)
 }
 
 update_lambdaijk <- function(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K, S_star, emptyTubes) {

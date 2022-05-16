@@ -31,14 +31,34 @@ diagnosticsPlot <- function(chain_output){
   
 }
 
-plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
+
+#' Biomass covariates coefficients plot
+#' 
+#' @description Plot the covariate coefficients of the biomasses amount
+#' 
+#' @param modelResults Output of the function \code{runEDNA}
+#' @param cov_num Index of the covariate to plot
+#' @param idxSpecies Optional indexes of the species to plot. If missing, the significant species are plotted.
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return A credible intervals plot with the species on the columns
+#' 
+#' @examples
+#' 
+#' plotBiomassCoefficients(sampleResults)
+#' 
+plotBiomassCoefficients <- function(modelResults, cov_num = 1, idxSpecies){
   
   nchain <- MCMCparams$nchain
   nburn <- MCMCparams$nburn
   niter <- MCMCparams$niter
   nthin <- MCMCparams$nthin
   
-  OTUnames <- modelResults$data_characteristics$OTUnames
+  OTUnames <- modelResults$data_infos$OTUnames
+  covName <- modelResults$data_infos$namesCovZ[cov_num]
   
   beta_z_output <- modelResults$params_output$beta_z_output
   
@@ -53,8 +73,8 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
   orderSignificantSpecies <- 
     significantSpecies[order(beta_CI[2,cov_num,significantSpecies])]
   
-  if(!is.null(species))  {
-    orderSignificantSpecies <- speciesToAnalyze  
+  if(!missing(idxSpecies))  {
+    orderSignificantSpecies <- idxSpecies  
   }
   
   beta_CI_subset <- beta_CI[,cov_num,orderSignificantSpecies]
@@ -80,7 +100,7 @@ plotCoefficients <- function(modelResults, cov_num = 1, species = NULL){
                               labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
-    ggplot2::scale_y_continuous(name = "Elevation") + ggplot2::coord_flip()
+    ggplot2::scale_y_continuous(name = covName) + ggplot2::coord_flip()
   
 }
 
@@ -118,10 +138,28 @@ FPNP_plot <- function(modelResults, idxSpecies){
   
 }
 
-plotBiomasses <- function(modelResults, datapoly, idxSpecies){
+#' Biomasses distribution maps
+#' 
+#' @description Plot the maps of the biomasses
+#' 
+#' @param modelResults Output of the function \code{runEDNA}
+#' @param datapoly Polygon file of the map
+#' @param idxSpecies Index of the species to plot
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return A plot with the map of the biomasses, where a darker color signals higher biomass
+#' 
+#' @examples
+#' 
+#' plotBiomassCoefficients(sampleResults)
+#' 
+plotBiomassesMap <- function(modelResults, datapoly, idxSpecies){
   
   logz_output <- modelResults$params_output$logz_output
-  logz_mean <- apply(logz_output, c(2, 3), mean)
+  logz_mean <- apply(logz_output, c(3, 4), mean)
   logz_species <- logz_mean[,idxSpecies]
   logz_species <- (logz_species - min(logz_species)) / (max(logz_species) - min(logz_species))
   
@@ -145,8 +183,26 @@ plotBiomasses <- function(modelResults, datapoly, idxSpecies){
 }
 
 
+#' Species correlation matrix
+#' 
+#' @description Plot the species correlation matrix
+#' 
+#' @param modelResults Output of the function \code{runEDNA}
+#' @param idxSpecies Optional indexes of the species to plot. If missing, the significant correlations are plotted.
+#' @param numSigCorrs Number of significant correlation to plot
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return A plot of the median correlation matrix for the species selected
+#' 
+#' @examples
+#' 
+#' plotCorrelationMatrix(sampleResults)
+#' 
 plotCorrelationMatrix <- function(modelResults, 
-                                  idxSpecies = NULL,
+                                  idxSpecies,
                                   numSigCorrs = 0){
   
   jointSpecies <- modelResults$data_infos$jointSpecies
@@ -163,7 +219,7 @@ plotCorrelationMatrix <- function(modelResults,
       quantile(x, probs = c(0.025, 0.975, .5))
     })
     
-    if(!is.null(speciesIdx)){
+    if(missing(idxSpecies)){
       
       Tau_CI_long <- matrix(NA, S * (S - 1) / 2, 5)
       l <- 1
@@ -195,9 +251,10 @@ plotCorrelationMatrix <- function(modelResults,
           Tau_CI_long_significants[orderSignificantCorrelations,]
         
         if(numSigCorrs > 0){
-          speciesIdx <- unique(as.vector(Tau_CI_long_ordered[1:numSigCorrs,4:5])  )
+          numSigCorrs <- min(numSigCorrs, nrow(Tau_CI_long_ordered))
+          idxSpecies <- unique(as.vector(Tau_CI_long_ordered[1:numSigCorrs,4:5])  )
         } else {
-          speciesIdx <- unique(as.vector(Tau_CI_long_ordered[,4:5]))
+          idxSpecies <- unique(as.vector(Tau_CI_long_ordered[,4:5]))
         }
         
       }
@@ -206,12 +263,12 @@ plotCorrelationMatrix <- function(modelResults,
     
     Tau_CI_median <- Tau_CI[3,,]
     Taucorr_CI_median <- stats::cov2cor(Tau_CI_median)
-    corr_to_plot <- Taucorr_CI_median[speciesIdx, speciesIdx]
+    corr_to_plot <- Taucorr_CI_median[idxSpecies, idxSpecies]
     
     OTUnames <- modelResults$data_infos$OTUnames
     
-    rownames(corr_to_plot) <- OTUnames[speciesIdx]
-    colnames(corr_to_plot) <- OTUnames[speciesIdx]
+    rownames(corr_to_plot) <- OTUnames[idxSpecies]
+    colnames(corr_to_plot) <- OTUnames[idxSpecies]
     
     return(ggcorrplot::ggcorrplot(corr_to_plot))
     

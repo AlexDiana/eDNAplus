@@ -163,14 +163,18 @@ cleanData <- function(data){
   }
   
   if(is.null(X_w0)){
+    namesCovW <- NULL
     X_w <- matrix(0, nrow = length(samples), ncol = 0)
   } else {
+    namesCovW <- colnames(X_w0)[-1]
     X_w <- as.matrix(X_w0[match(samples, X_w0[,1]), -1])
   }
   
   if(is.null(X_z0)){
+    namesCovZ <- NULL
     X_z <- matrix(0, nrow = length(sites), ncol = 0)
   } else {
+    namesCovZ <- colnames(X_z0)[-1]
     X_z <- as.matrix(X_z0[match(sites, X_z0[,1]), -1])
   }
   
@@ -184,6 +188,8 @@ cleanData <- function(data){
                "v_spikes" = v_spikes,
                "X_w" = X_w,
                "X_z" = X_z,
+               "namesCovZ" = namesCovZ,
+               "namesCovW" = namesCovW,
                "sites" = sites)
   
 }
@@ -1056,7 +1062,7 @@ fitModel <- function(data,
     }
     
     for (iter in 1:(nburn + nthin * niter)) {
-      print(n_tilde)
+      
       if(iter <= nburn){
         print(paste0("Chain = ",chain," - Burn-in Iteration = ",iter))
       } else {
@@ -1655,7 +1661,9 @@ fitModel <- function(data,
     "infos" = data$infos,
     "sites" = sites,
     "OTUnames" = dimnames(y)[[3]],
-    "jointSpecies" = jointSpecies
+    "jointSpecies" = jointSpecies,
+    "namesCovZ" = data$namesCovZ,
+    "namesCovW" = data$namesCovW
   )
   
   output <- list("params_output" = params_output,

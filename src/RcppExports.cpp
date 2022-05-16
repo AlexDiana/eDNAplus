@@ -729,8 +729,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_r_nb_cpp
-arma::vec update_r_nb_cpp(arma::vec r_nb, arma::vec lambda, arma::mat u, arma::mat v, arma::cube& y, arma::mat delta, arma::mat gamma, arma::cube& c_imk, arma::vec M_site, arma::vec K, bool optimStep, double sd_r_proposal);
-RcppExport SEXP _eDNAPlus_update_r_nb_cpp(SEXP r_nbSEXP, SEXP lambdaSEXP, SEXP uSEXP, SEXP vSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP gammaSEXP, SEXP c_imkSEXP, SEXP M_siteSEXP, SEXP KSEXP, SEXP optimStepSEXP, SEXP sd_r_proposalSEXP) {
+arma::vec update_r_nb_cpp(arma::vec r_nb, arma::vec lambda, arma::mat u, arma::mat v, arma::cube& y, arma::mat delta, arma::mat gamma, arma::cube& c_imk, arma::vec M_site, arma::vec K, double mean_r, double sd_r, bool optimStep, double sd_r_proposal);
+RcppExport SEXP _eDNAPlus_update_r_nb_cpp(SEXP r_nbSEXP, SEXP lambdaSEXP, SEXP uSEXP, SEXP vSEXP, SEXP ySEXP, SEXP deltaSEXP, SEXP gammaSEXP, SEXP c_imkSEXP, SEXP M_siteSEXP, SEXP KSEXP, SEXP mean_rSEXP, SEXP sd_rSEXP, SEXP optimStepSEXP, SEXP sd_r_proposalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -744,9 +744,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::cube& >::type c_imk(c_imkSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type K(KSEXP);
+    Rcpp::traits::input_parameter< double >::type mean_r(mean_rSEXP);
+    Rcpp::traits::input_parameter< double >::type sd_r(sd_rSEXP);
     Rcpp::traits::input_parameter< bool >::type optimStep(optimStepSEXP);
     Rcpp::traits::input_parameter< double >::type sd_r_proposal(sd_r_proposalSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_r_nb_cpp(r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, optimStep, sd_r_proposal));
+    rcpp_result_gen = Rcpp::wrap(update_r_nb_cpp(r_nb, lambda, u, v, y, delta, gamma, c_imk, M_site, K, mean_r, sd_r, optimStep, sd_r_proposal));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1006,7 +1008,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_logpost_gamma", (DL_FUNC) &_eDNAPlus_logpost_gamma, 4},
     {"_eDNAPlus_logpost_gamma_uv", (DL_FUNC) &_eDNAPlus_logpost_gamma_uv, 8},
     {"_eDNAPlus_update_uv_poisgamma_cpp", (DL_FUNC) &_eDNAPlus_update_uv_poisgamma_cpp, 23},
-    {"_eDNAPlus_update_r_nb_cpp", (DL_FUNC) &_eDNAPlus_update_r_nb_cpp, 12},
+    {"_eDNAPlus_update_r_nb_cpp", (DL_FUNC) &_eDNAPlus_update_r_nb_cpp, 14},
     {"_eDNAPlus_update_lambdaijk", (DL_FUNC) &_eDNAPlus_update_lambdaijk, 11},
     {"_eDNAPlus_dnbinom_mean", (DL_FUNC) &_eDNAPlus_dnbinom_mean, 3},
     {"_eDNAPlus_sample_cpp", (DL_FUNC) &_eDNAPlus_sample_cpp, 2},
