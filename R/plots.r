@@ -239,7 +239,12 @@ plotCorrelationMatrix <- function(modelResults,
                 (Tau_CI_long[,1] > 0 & Tau_CI_long[,2] > 0) )
       
       if(length(significantCorrelations) == 0){
-        print("No significant correlations")
+        
+        if(missing(idxSpecies)){
+          print("No significant correlations")
+          stop()  
+        }
+        
       } else {
         
         Tau_CI_long_significants <- Tau_CI_long[significantCorrelations,]
