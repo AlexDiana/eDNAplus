@@ -242,6 +242,8 @@ plotCorrelationMatrix <- function(modelResults,
         
         if(missing(idxSpecies)){
           print("No significant correlations")
+          opt <- options(show.error.messages = FALSE)
+          on.exit(options(opt))
           stop()  
         }
         
