@@ -168,6 +168,7 @@ cleanData <- function(data){
   } else {
     namesCovW <- colnames(X_w0)[-1]
     X_w <- as.matrix(X_w0[match(samples, X_w0[,1]), -1])
+    X_w <- scale(X_w)
   }
   
   if(is.null(X_z0)){
@@ -176,6 +177,7 @@ cleanData <- function(data){
   } else {
     namesCovZ <- colnames(X_z0)[-1]
     X_z <- as.matrix(X_z0[match(sites, X_z0[,1]), -1])
+    X_z <- scale(X_z)
   }
   
   data <- list("y" = y,

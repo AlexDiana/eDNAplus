@@ -428,7 +428,12 @@ update_lambda_tilde_NB <- function(y, c_imk, mu_tilde, n_tilde,
     # propose new sets of parameters
     
     mu_tilde_pros <- mean(nonPCRcounts)
-    n_tilde_pros <-  mean(nonPCRcounts)^2 / (var(nonPCRcounts) - mean(nonPCRcounts))
+    if(length(nonPCRcounts) == 1){
+      varNonPCRcounts <- 10^2
+    } else {
+      varNonPCRcounts <- var(nonPCRcounts)
+    }
+    n_tilde_pros <-  mean(nonPCRcounts)^2 / (varNonPCRcounts - mean(nonPCRcounts))
     if(n_tilde_pros < 0){
       n_tilde_pros <- 10
     }
