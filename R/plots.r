@@ -66,18 +66,20 @@ plotBiomassCoefficients <- function(modelResults, cov_num = 1, idxSpecies){
     quantile(x, probs = c(.05,.5,.95))
   })
   
+  beta_CI <- beta_CI[,cov_num,]
+  
   significantSpecies <- 
-    which(beta_CI[3,cov_num,] < 0 |
-            beta_CI[1,cov_num,] > 0)
+    which(beta_CI[3,] < 0 |
+            beta_CI[1,] > 0)
   
   orderSignificantSpecies <- 
-    significantSpecies[order(beta_CI[2,cov_num,significantSpecies])]
+    significantSpecies[order(beta_CI[2,significantSpecies])]
   
   if(!missing(idxSpecies))  {
     orderSignificantSpecies <- idxSpecies  
   }
   
-  beta_CI_subset <- beta_CI[,cov_num,orderSignificantSpecies]
+  beta_CI_subset <- beta_CI[,orderSignificantSpecies,drop=F]
   colnames(beta_CI_subset) <- OTUnames[orderSignificantSpecies]
   
   subsetSpecies <- 1:length(orderSignificantSpecies)
