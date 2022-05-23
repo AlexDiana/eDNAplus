@@ -167,7 +167,7 @@ plotTruePositiveProbability <- function(modelResults, idxSpecies){
                               labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
-    ggplot2::scale_y_continuous(name = "p") + ggplot2::coord_flip()
+    ggplot2::scale_y_continuous(name = "PCR true positive rate") + ggplot2::coord_flip()
   
 }
 
@@ -231,7 +231,7 @@ plotFalsePositiveProbability <- function(modelResults, idxSpecies){
                               labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
-    ggplot2::scale_y_continuous(name = "q") + ggplot2::coord_flip()
+    ggplot2::scale_y_continuous(name = "PCR false positive rate") + ggplot2::coord_flip()
   
 }
 
