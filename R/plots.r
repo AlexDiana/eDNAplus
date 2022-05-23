@@ -102,7 +102,136 @@ plotBiomassCoefficients <- function(modelResults, cov_num = 1, idxSpecies){
                               labels = namesSpecies) +
     # scale_x_continuous(breaks = subsetSpecies, name = "Species",
     # labels = colnames(OTU)[subsetSpecies]) +
-    ggplot2::scale_y_continuous(name = covName) + ggplot2::coord_flip()
+    ggtitle(covName) +
+    ggplot2::scale_y_continuous(name = expression(beta)) + ggplot2::coord_flip()
+  
+}
+
+#' Probability plot of true positive
+#' 
+#' @description Plot the credible intervals of the true positive probability
+#' 
+#' @param modelResults Output of the function \code{runEDNA}
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return Credible intervals plot of the true positive probabilities
+#' 
+#' @examples
+#' 
+#' plotTruePositiveProbability(sampleResults)
+#' 
+plotTruePositiveProbability <- function(modelResults, idxSpecies){
+  
+  nchain <- MCMCparams$nchain
+  nburn <- MCMCparams$nburn
+  niter <- MCMCparams$niter
+  nthin <- MCMCparams$nthin
+  
+  OTUnames <- modelResults$data_infos$OTUnames
+  
+  p_11_output <- modelResults$params_output$p_11_output
+  
+  p11_CI <- apply(p_11_output, c(3), function(x){
+    quantile(x, probs = c(.05,.5,.95))
+  })
+  
+  colnames(p11_CI) <- OTUnames
+  
+  if(!missing(idxSpecies))  {
+    speciesSubset <- idxSpecies  
+  } else {
+    speciesSubset <- 1:dim(p_11_output)[3]
+  }
+  
+  p11_CI_subset <- p11_CI[,speciesSubset,drop=F]
+  colnames(p11_CI_subset) <- OTUnames[speciesSubset]
+  
+  factorSub <- factor(speciesSubset, levels = speciesSubset)
+  
+  namesSpecies <- OTUnames[speciesSubset]
+  
+  ggplot2::ggplot() + geom_point(data = NULL, ggplot2::aes(x = factorSub,
+                                            y = p11_CI_subset[2,])) + 
+    geom_errorbar(data = NULL, ggplot2::aes(x = factorSub,
+                                            ymin = p11_CI_subset[1,],
+                                            ymax = p11_CI_subset[3,])) + 
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 20),
+                   axis.title = ggplot2::element_text(size = 20, face = "bold"),
+                   axis.text = ggplot2::element_text(size = 9, face = "bold", angle = 0),
+                   panel.grid.major = ggplot2::element_line(colour="grey", size=0.15),
+                   panel.background = ggplot2::element_rect(fill = "white", color = "black")) +
+    ggplot2::scale_x_discrete(name = "Species", breaks = speciesSubset,
+                              labels = namesSpecies) +
+    # scale_x_continuous(breaks = subsetSpecies, name = "Species",
+    # labels = colnames(OTU)[subsetSpecies]) +
+    ggplot2::scale_y_continuous(name = "p") + ggplot2::coord_flip()
+  
+}
+
+#' Probability plot of false positive
+#' 
+#' @description Plot the credible intervals of the false positive probabilities
+#' 
+#' @param modelResults Output of the function \code{runEDNA}
+#' 
+#' @importFrom magrittr %>%
+#' 
+#' @export
+#' 
+#' @return Credible intervals plot of the false positive probabilities
+#' 
+#' @examples
+#' 
+#' plotTruePositiveProbability(sampleResults)
+#' 
+plotFalsePositiveProbability <- function(modelResults, idxSpecies){
+  
+  nchain <- MCMCparams$nchain
+  nburn <- MCMCparams$nburn
+  niter <- MCMCparams$niter
+  nthin <- MCMCparams$nthin
+  
+  OTUnames <- modelResults$data_infos$OTUnames
+  
+  p_10_output <- modelResults$params_output$p_10_output
+  
+  p11_CI <- apply(p_10_output, c(3), function(x){
+    quantile(x, probs = c(.05,.5,.95))
+  })
+  
+  colnames(p11_CI) <- OTUnames
+  
+  if(!missing(idxSpecies))  {
+    speciesSubset <- idxSpecies  
+  } else {
+    speciesSubset <- 1:dim(p_10_output)[3]
+  }
+  
+  p11_CI_subset <- p11_CI[,speciesSubset,drop=F]
+  colnames(p11_CI_subset) <- OTUnames[speciesSubset]
+  
+  factorSub <- factor(speciesSubset, levels = speciesSubset)
+  
+  namesSpecies <- OTUnames[speciesSubset]
+  
+  ggplot2::ggplot() + geom_point(data = NULL, ggplot2::aes(x = factorSub,
+                                            y = p11_CI_subset[2,])) + 
+    geom_errorbar(data = NULL, ggplot2::aes(x = factorSub,
+                                            ymin = p11_CI_subset[1,],
+                                            ymax = p11_CI_subset[3,])) + 
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, size = 20),
+                   axis.title = ggplot2::element_text(size = 20, face = "bold"),
+                   axis.text = ggplot2::element_text(size = 9, face = "bold", angle = 0),
+                   panel.grid.major = ggplot2::element_line(colour="grey", size=0.15),
+                   panel.background = ggplot2::element_rect(fill = "white", color = "black")) +
+    ggplot2::scale_x_discrete(name = "Species", breaks = speciesSubset,
+                              labels = namesSpecies) +
+    # scale_x_continuous(breaks = subsetSpecies, name = "Species",
+    # labels = colnames(OTU)[subsetSpecies]) +
+    ggplot2::scale_y_continuous(name = "q") + ggplot2::coord_flip()
   
 }
 
@@ -160,30 +289,39 @@ FPNP_plot <- function(modelResults, idxSpecies){
 #' 
 plotBiomassesMap <- function(modelResults, datapoly, idxSpecies){
   
-  logz_output <- modelResults$params_output$logz_output
-  logz_mean <- apply(logz_output, c(3, 4), mean)
-  logz_species <- logz_mean[,idxSpecies]
-  logz_species <- (logz_species - min(logz_species)) / (max(logz_species) - min(logz_species))
-  
-  ggplot() +
-    geom_polygon(data = datapoly, aes(x = x, y = y, group = id), alpha =  rep(logz_species, each = 4),
-                 fill = "grey", color = "black") +
-    scale_alpha_continuous(range = c(0, 1)) +
-    xlab("X") + ylab("Y") +
-    # geom_point(data = NULL, aes(x = siteLocations[,1], y = siteLocations[,2])) +
-    scale_x_continuous(breaks = c()) +
-    scale_y_continuous(breaks = c()) +
-    theme(plot.title = element_text(hjust = 0.5, size = 20),
-          legend.position = "none",
-          axis.title = element_text(size = 20, face = "bold"),
-          axis.text = element_text(size = 13, face = "bold", angle = 90),
-          # panel.grid.major = element_line(colour="grey", size=0.015),
-          panel.background = element_rect(fill = "white", color = "black")) 
-  
-  
+  if(length(idxSpecies) > 1){
+    
+    print("You can only plot one species at a time")
+    
+  } else {
+    
+    logz_output <- modelResults$params_output$logz_output
+    logz_mean <- apply(logz_output, c(3, 4), mean)
+    logz_species <- logz_mean[,idxSpecies]
+    # logz_species <- (logz_species - min(logz_species)) / (max(logz_species) - min(logz_species))
+    
+    datapoly2 <- datapoly
+    datapoly2$LogBiomass <- rep(logz_species, each = 4)
+    
+    ggplot() +
+      geom_polygon(data = datapoly2, aes(x = x, y = y, group = id, 
+                                        alpha = LogBiomass), 
+                   color = "black") +
+      scale_alpha_continuous(range = c(0, 1)) +
+      xlab("X") + ylab("Y") +
+      # geom_point(data = NULL, aes(x = siteLocations[,1], y = siteLocations[,2])) +
+      scale_x_continuous(breaks = c()) +
+      scale_y_continuous(breaks = c()) +
+      theme(plot.title = element_text(hjust = 0.5, size = 20),
+            # legend.position = "none",
+            axis.title = element_text(size = 20, face = "bold"),
+            axis.text = element_text(size = 13, face = "bold", angle = 90),
+            # panel.grid.major = element_line(colour="grey", size=0.015),
+            panel.background = element_rect(fill = "white", color = "black")) 
+      
+  }
   
 }
-
 
 #' Species correlation matrix
 #' 
