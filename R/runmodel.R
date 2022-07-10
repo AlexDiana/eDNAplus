@@ -50,6 +50,7 @@
 runEDNA <- function(data,
                     priors = NULL,
                     jointSpecies = F,
+                    spatialCorr = F,
                     paramsUpdate = NULL,
                     MCMCparams,
                     paramsToSave = NULL){
@@ -96,6 +97,7 @@ runEDNA <- function(data,
   modelResults <- fitModel(data,
                            priors,
                            jointSpecies,
+                           spatialCorr,
                            paramsUpdate,
                            MCMCparams)
   
@@ -108,9 +110,15 @@ cleanData <- function(data){
   infos <- data$infos
   X_w0 <- data$X_w
   X_z0 <- data$X_z
+  X_s0 <- data$X_s
   PCR_spike <- data$PCR_spike
   spikeInBiomass <- data$spikeInBiomass
   spikeInPresent <- data$spikeInPresent
+  
+  if(!all(apply(PCR_table, 2, function(x){all(is.numeric(x))})) | 
+     !all(apply(PCR_spike, 2, function(x){all(is.numeric(x))}))){
+    stop("Non numeric elements in PCR table")
+  }
   
   K <- infos$Replicates
   
@@ -167,7 +175,11 @@ cleanData <- function(data){
     X_w <- matrix(0, nrow = length(samples), ncol = 0)
   } else {
     namesCovW <- colnames(X_w0)[-1]
-    X_w <- as.matrix(X_w0[match(samples, X_w0[,1]), -1])
+    matchingIndexes <- match(samples, X_w0[,1])
+    if(any(is.na(matchingIndexes))){
+      stop("Site names in covariates column not matching samples names in info file")
+    }
+    X_w <- as.matrix(X_w0[matchingIndexes, -1])
     X_w <- scale(X_w)
   }
   
@@ -176,8 +188,19 @@ cleanData <- function(data){
     X_z <- matrix(0, nrow = length(sites), ncol = 0)
   } else {
     namesCovZ <- colnames(X_z0)[-1]
-    X_z <- as.matrix(X_z0[match(sites, X_z0[,1]), -1])
+    matchingIndexes <- match(sites, X_z0[,1])
+    if(any(is.na(matchingIndexes))){
+      stop("Site names in covariates column not matching sites names in info file")
+    }
+    X_z <- as.matrix(X_z0[matchingIndexes, -1])
     X_z <- scale(X_z)
+  }
+  
+  if(is.null(X_s0)){
+    X_s <- matrix(0, nrow = length(sites), ncol = 0)
+  } else {
+    X_s <- as.matrix(X_s0[match(sites, X_s0[,1]), -1])
+    X_s <- scale(X_s)
   }
   
   data <- list("y" = y,
@@ -190,6 +213,7 @@ cleanData <- function(data){
                "v_spikes" = v_spikes,
                "X_w" = X_w,
                "X_z" = X_z,
+               "X_s" = X_s,
                "namesCovZ" = namesCovZ,
                "namesCovW" = namesCovW,
                "sites" = sites)
@@ -199,6 +223,7 @@ cleanData <- function(data){
 fitModel <- function(data,
                      priors = NULL,
                      jointSpecies,
+                     spatialCorr,
                      paramsUpdate = list(updateAll = T,
                                          params = NULL,
                                          correct = NULL,
@@ -242,6 +267,7 @@ fitModel <- function(data,
     emptyTubes <- data$emptyTubes
     S_star <- data$S_star
     X_w <- data$X_w
+    X_s <- data$X_s
     X_z <- data$X_z
     v_spikes <- data$v_spikes
     spikedSample <- data$spikedSample
@@ -252,6 +278,7 @@ fitModel <- function(data,
     ncov_w <- ncol(X_w)
     n <- length(M_site)
     S <- dim(y)[3] - S_star
+    
   }
   
   # priors
@@ -268,6 +295,7 @@ fitModel <- function(data,
     b_p10 <- priors$b_p10
     a_theta0 <- priors$a_theta0
     b_theta0 <- priors$b_theta0
+    l_gp <- priors$l_gp
     
     # standard priors
     {
@@ -292,6 +320,8 @@ fitModel <- function(data,
       sd_ntilde <- 100
       
       sigma_beta <- 1
+      
+      l_gp <- .05
       
       sigma_mu <- 1
       sigma_gamma <- 1
@@ -331,6 +361,14 @@ fitModel <- function(data,
       
       Tau_Priors <- list("a_tau" = a_tau,
                          "b_tau" = rep(1, S))
+    }
+    
+    if(spatialCorr){
+      Sigma_n <- K2(X_s, X_s, 1, l_gp)
+      invSigma_n <- solve(Sigma_n)
+      chol_invSigma_n <- solve(t(chol(Sigma_n)))
+    } else {
+      chol_invSigma_n <- NULL
     }
     
   }
@@ -614,6 +652,30 @@ fitModel <- function(data,
       c_imk2_mean <- array(0, dim = c(nchain, sum(M_site) + emptyTubes, max(K), S))
     }
     
+    # spatial grid
+    # if (spatialCorr) {
+    #   # x_min <- min(X_s[,1]) - .01
+    #   # x_max <- max(X_s[,1]) + .01
+    #   # y_min <- min(X_s[,2]) - .01
+    #   # y_max <- max(X_s[,2]) + .01
+    #   # 
+    #   # X_s_star <- as.matrix(expand.grid(seq(x_min, x_max, length.out = 20),
+    #   #                         seq(y_min, y_max, length.out = 20)))
+    #   
+    #   n_star <- nrow(X_s_star)
+    #   
+    #   Sigma_XstarXstar <- K2(X_s_star, X_s_star, 1, l_gp)
+    #   Sigma_XsXstar <- K2(X_s, X_s_star, 1, l_gp)
+    #   Sigma_XstarXs <- K2(X_s_star, X_s, 1, l_gp)
+    #   
+    #   Sigma_star_cond <- Sigma_XstarXstar - Sigma_XstarXs %*% solve(Sigma_n) %*% Sigma_XsXstar
+    #   chol_Sigma_star_cond <- t(chol(Sigma_star_cond))
+    #   
+    #   logz_star_output <- array(NA, dim = c(nchain, niter, n_star, S))
+    # } else {
+    #   logz_star_output <- NULL
+    # }
+    
     
   }
   
@@ -769,6 +831,9 @@ fitModel <- function(data,
         eta_output_iter <- NULL
       }
       
+      # if(spatialCorr){
+      #   logz_star_output_iter <- array(NA, dim = c(niter, n_star, S))
+      # }
      
     }
     
@@ -1075,6 +1140,8 @@ fitModel <- function(data,
       
       if(updateLambda_CP){
         
+        print("Update lambda")
+        
         if(beta0equal0){
           if(jointSpecies){
             tau <- sqrt(diag(Tau_params$Sigma))
@@ -1102,6 +1169,8 @@ fitModel <- function(data,
         v <- list_lambda$v
         logz <- list_lambda$logz
         
+        if(min(lambda) < -100) browser()
+        
       }
       
       # LAMBDA ----------------------------------------------
@@ -1124,6 +1193,8 @@ fitModel <- function(data,
       
       if(updateMu){
         
+        print("Update mu")
+        
         mu <- update_mu_cpp(mu, lambda, delta, gamma, sigma, sigma_gamma, beta0,
                             beta_z, logz, v, beta_theta, M_site, sigma_mu, S_star, emptyTubes)
         
@@ -1133,6 +1204,9 @@ fitModel <- function(data,
       # LAMBDA IJK ----
       
       if(updateLambdaijk){
+        
+        print("Update lambdaijk")
+        
         lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K,
                                        S_star, emptyTubes)
       }
@@ -1166,7 +1240,7 @@ fitModel <- function(data,
       # U --------------------------------------
       
       if(updateU){
-        # print("Update u")
+        print("Update u")
         
         list_u <- update_u_poisgamma_cpp(v, u, lambda, beta0, beta_z, logz,
                                          mu, lambda_ijk, r_nb, X_w, beta_w, c_imk,
@@ -1182,32 +1256,72 @@ fitModel <- function(data,
       
       if(updateL){
         
-        if(jointSpecies){
-          Tau <- Tau_params$Sigma
-          logz <- update_logz_corr_cpp(logz, beta0, X_z, beta_z, mu,
-                                       v, lambda, beta_theta, X_w, beta_w,
-                                       Tau, delta, gamma, sigma,
-                                       M_site, S_star, emptyTubes)
-        } else {
+        print("update l")
+        
+        if(!jointSpecies & !spatialCorr){
+          
           tau <- Tau_params$tau
           logz <- update_logz_cpp(logz, beta0, X_z, beta_z,
                                   mu, v, lambda, beta_theta,
                                   X_w, beta_w, tau, delta, gamma, sigma,
                                   M_site, S_star, emptyTubes)
+        } else if(jointSpecies & !spatialCorr){
+          Tau <- Tau_params$Sigma    
+          logz <- update_logz_corr_cpp(logz, beta0, X_z, beta_z, mu,
+                                       v, lambda, beta_theta, X_w, beta_w,
+                                       Tau, delta, gamma, sigma,
+                                       M_site, S_star, emptyTubes) 
+        } else if(!jointSpecies & spatialCorr){
+          Tau <- diag(1, nrow = S)   
+          logz <- update_logz_joint_cpp(logz, beta0, X_z, beta_z, mu,
+                                       v, lambda, beta_theta, X_w, beta_w,
+                                       Sigma_n, invSigma_n, Tau, delta, gamma, 
+                                       sigma, M_site, S_star, emptyTubes) 
+        } else {
+          Tau <- Tau_params$Sigma 
+          logz <- update_logz_joint_cpp(logz, beta0, X_z, beta_z, mu,
+                                        v, lambda, beta_theta, X_w, beta_w,
+                                        Sigma_n, Tau, delta, gamma, 
+                                        sigma, M_site, S_star, emptyTubes) 
         }
-        
+          
       }
       
       # BETA_Z --------------
       
       if(updateBeta_z){
-        if(jointSpecies){
-          Tau <- Tau_params$Sigma
-          list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta, !beta0equal0)
-        } else {
+        
+        print("Update beta z")
+        
+        if(!jointSpecies & !spatialCorr){
           tau <- Tau_params$tau
           list_beta_z <- update_betaz_CP(beta0, beta_z, logz, tau, X_z, sigma_beta, !beta0equal0)
+          
+        } else if(jointSpecies & !spatialCorr){
+          Tau <- Tau_params$Omega
+          list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta, !beta0equal0)
+        } else if(!jointSpecies & spatialCorr){
+          tau <- Tau_params$tau
+          Tau <- diag(tau, nrow = S)
+          list_beta_z <- update_betaz_CP_joint(beta0, beta_z, logz, 
+                                               Tau, invSigma_n,
+                                               X_z, sigma_beta, 
+                                               !beta0equal0)
+        } else {
+          Tau <- Tau_params$Sigma
+          list_beta_z <- update_betaz_CP_joint(beta0, beta_z, logz, 
+                                               Tau, invSigma_n,
+                                               X_z, sigma_beta, 
+                                               !beta0equal0)
         }
+        
+        # if(jointSpecies){
+        #   Tau <- Tau_params$Tau
+        #   list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta, !beta0equal0)
+        # } else {
+        #   tau <- Tau_params$tau
+        #   list_beta_z <- update_betaz_CP(beta0, beta_z, logz, tau, X_z, sigma_beta, !beta0equal0)
+        # }
         
         beta0 <- as.vector(list_beta_z$beta0)
         beta_z <- list_beta_z$beta_z
@@ -1217,7 +1331,7 @@ fitModel <- function(data,
       # BETA_W ---------
       
       if(updateBeta_w){
-        # print("Update betaw")
+        print("Update betaw")
         if(ncov_w > 0){
           beta_w <- update_betaw_cpp(beta_w, v, delta, logz, X_w, sigma, sigma_beta, M_site)
         }
@@ -1226,9 +1340,11 @@ fitModel <- function(data,
       # TAU ----------------------------------------------------------
       
       if(updateTau){
+        print("Update Tau")
         Tau_params <- update_Tau(X_z, logz, beta0, beta_z,
                                  Tau_params, Tau_Priors,
-                                 jointSpecies)  
+                                 jointSpecies, spatialCorr,
+                                 chol_invSigma_n)  
       }
       
       
@@ -1290,7 +1406,7 @@ fitModel <- function(data,
       # R - NB ---------------------
       
       if(updateR){
-        # print("Update r")
+        print("Update r")
         
         r_nb <- update_r_nb_cpp(r_nb, lambda, u,
                                 v, y, delta, gamma, c_imk, M_site, K,
@@ -1303,7 +1419,7 @@ fitModel <- function(data,
       # DELTA/C/D --------------------------------------------------------
       
       if(updateDeltaGammaC){
-        
+        print("Update delta")
         v_pres <- (delta == 1) | (gamma == 1)
         list_deltagammac <- update_delta_c_d_rjmcmc(v_pres, y, v, lambda, r_nb,
                                                     M_site, K, 
@@ -1515,6 +1631,23 @@ fitModel <- function(data,
           (c_imk[,,1:S] == 1) / niter
         c_imk2_mean[chain,,,] <- (c_imk2_mean[chain,,,]) + 
           (c_imk[,,1:S] == 2) / niter
+        
+        # if(spatialCorr){
+        #   
+        #   Xbeta <- matrix(beta0, n, S, byrow = F) + X_z %*% beta_z
+        #   Xbeta_star <- matrix(beta0, n_star, S, byrow = F) + X_z_star %*% beta_z
+        #   
+        #   mu1 <- Xbeta_star + Sigma_XstarXs %*% solve(Sigma_n) %*% (logz - Xbeta)
+        #   Sigma1 <- Sigma_XstarXstar - Sigma_XstarXs %*% solve(Sigma_n) %*% Sigma_XsXstar
+        #   
+        #   if(jointSpecies){
+        #     chol_Tau <- t(chol(Tau_params$Sigma))
+        #   } else {
+        #     chol_Tau <- diag(tau, nrow = S)
+        #   }
+        #   
+        #   logz_star_output_iter[trueIter,,] <- rmtrnorm_chol(mu1, chol_Sigma_star_cond, chol_Tau)
+        # }
          
       }
       
@@ -1622,6 +1755,9 @@ fitModel <- function(data,
         eta_output[chain,,,,] <- eta_output_iter
       } 
       
+      # if(spatialCorr){
+      #   logz_star_output[chain,,,] <- logz_output_iter
+      # }
     }
     
   }

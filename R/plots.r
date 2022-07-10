@@ -426,3 +426,50 @@ plotCorrelationMatrix <- function(modelResults,
   }
   
 }
+
+predictNewSites <- function(){
+  
+  logz_output <- modelResults$params_output$logz_output
+  logz_output <- apply(logz_output, c(3,4), c)
+  
+  if (spatialCorr) {
+    # x_min <- min(X_s[,1]) - .01
+    # x_max <- max(X_s[,1]) + .01
+    # y_min <- min(X_s[,2]) - .01
+    # y_max <- max(X_s[,2]) + .01
+    # 
+    # X_s_star <- as.matrix(expand.grid(seq(x_min, x_max, length.out = 20),
+    #                         seq(y_min, y_max, length.out = 20)))
+    
+    n_star <- nrow(X_s_star)
+    
+    Sigma_XstarXstar <- K2(X_s_star, X_s_star, 1, l_gp)
+    Sigma_XsXstar <- K2(X_s, X_s_star, 1, l_gp)
+    Sigma_XstarXs <- K2(X_s_star, X_s, 1, l_gp)
+    
+    Sigma_star_cond <- Sigma_XstarXstar - Sigma_XstarXs %*% solve(Sigma_n) %*% Sigma_XsXstar
+    chol_Sigma_star_cond <- t(chol(Sigma_star_cond))
+    
+    logz_star_output <- array(NA, dim = c(nchain, niter, n_star, S))
+  } else {
+    logz_star_output <- NULL
+  }
+  
+  niter <- 
+  
+    for (iter in 1:niter) {
+    Xbeta <- matrix(beta0, n, S, byrow = F) + X_z %*% beta_z
+    Xbeta_star <- matrix(beta0, n_star, S, byrow = F) + X_z_star %*% beta_z
+    
+    mu1 <- Xbeta_star + Sigma_XstarXs %*% solve(Sigma_n) %*% (logz - Xbeta)
+    Sigma1 <- Sigma_XstarXstar - Sigma_XstarXs %*% solve(Sigma_n) %*% Sigma_XsXstar
+    
+    if(jointSpecies){
+      chol_Tau <- t(chol(Tau_params$Sigma))
+    } else {
+      chol_Tau <- diag(tau, nrow = S)
+    }
+  }
+  
+  
+}

@@ -43,7 +43,6 @@ OTUtable3 <- t(OTUtable3)
 OTUtable3 <- as.data.frame(OTUtable3)
 colnames(OTUtable3) <- rownames_OTUtable3
 OTUtable3$PCR <- 3
-
 samplesid <- rownames(OTUtable1)
 
 samplesid <- gsub('\\.', '-', samplesid)
@@ -121,6 +120,16 @@ OTUspikes <- sapply(OTUspecies, function(x){
   }
 })
 
+# read in species names ------
+
+speciesNamesTable <- read.csv("speciesNames.csv")
+speciesNamesTable <- speciesNamesTable[order(speciesNamesTable$occurrenceId),]
+
+speciesNames <- colnames(OTUtable)[-c(1,2,3)]
+speciesNames <- paste0("S",gsub(".*S", "", speciesNames))
+OTUspeciesNames <- speciesNamesTable$classification[match(speciesNames[1:1000], 
+                                                          speciesNamesTable$occurrenceId)]
+
 # cut data set ---------
 
 OTUtable0 <- OTUtable[4:ncol(OTUtable)]
@@ -140,18 +149,24 @@ OTU <- OTU[,order(-nonNAreadspecies)]
 OTUspecies <- OTUspecies[order(-nonNAreadspecies)]
 OTUspikes <- OTUspikes[order(-nonNAreadspecies)]
 
-OTU_nonspike <- OTU[,1:100]
+OTU_nonspike <- OTU[,1:1000]
 OTU_spike <- OTU[,OTUspikes]
 OTU_spike <- OTU_spike[,c(1,2)]
 
-# rebalance with lysis ratio ---------
+speciesNames_nonspike <- colnames(OTU_nonspike)
+speciesNames_nonspike <- paste0("S",gsub(".*S", "", speciesNames_nonspike))
+OTUspeciesNames <- speciesNamesTable$classification[match(speciesNames_nonspike, 
+                                                          speciesNamesTable$occurrenceId)]
+idx_nonduplicated <- which(!duplicated(OTUspeciesNames) & !is.na(OTUspeciesNames))
+OTU_nonspike <- OTU_nonspike[,idx_nonduplicated]
+colnames(OTU_nonspike) <- OTUspeciesNames[idx_nonduplicated]
 
-OTUtable0 <- OTUtable[4:ncol(OTUtable)]
+# rebalance with lysis ratio ---------
 
 all(data$Sample %in% envcov_orig$Sample)
 
 lysis_ratio_factor <- sapply(1:nrow(OTU_spike), function(i){
-  current <- envcov_orig$lysis_ratio[which(envcov_orig$Sample == data$Sample[i])]
+  current <- 1 / envcov_orig$lysis_ratio[which(envcov_orig$Sample == data$Sample[i])]
   if(!is.na(current)){
     return(current)
   } else {

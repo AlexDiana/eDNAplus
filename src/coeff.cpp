@@ -78,6 +78,44 @@ double dmt_cpp(arma::vec x, double nu, arma::vec mu, arma::mat Sigma, bool retur
   }
 }
 
+// GAUSSIAN PROCESS FUNCTIONS
+
+double k_cpp(double x1, double x2, double a, double l){
+  // return pow(1 + (x1-x2)*(x1-x2), - alphaGP);
+  return a*exp(-(x1-x2)*(x1-x2)/(2*pow(l,2)));
+  // return 1;
+}
+
+arma::mat K(arma::vec x1, arma::vec x2, double a, double l){
+  arma::mat res(x1.size(), x2.size());
+  
+  for(int i = 0; (unsigned)i < x1.size(); i++){
+    for(int j = 0; (unsigned)j < x2.size(); j++){
+      res(i,j) = k_cpp(x1[i],x2[j], a, l);
+    }  
+  }
+  
+  return res;
+}
+
+double k2_cpp(arma::rowvec x1, arma::rowvec x2, double a, double l){
+  // return pow(1 + (x1-x2)*(x1-x2), - alphaGP);
+  return a*exp(-( pow(x1[0]-x2[0], 2) + pow(x1[1]-x2[1], 2) ) /(2*pow(l,2)));
+}
+
+// [[Rcpp::export]]
+arma::mat K2(arma::mat x1, arma::mat x2, double a, double l){
+  arma::mat res(x1.n_rows, x2.n_rows);
+  
+  for(int i = 0; (unsigned)i < x1.n_rows; i++){
+    for(int j = 0; (unsigned)j < x2.n_rows; j++){
+      res(i,j) = k2_cpp(x1.row(i),x2.row(j), a, l);
+    }  
+  }
+  
+  return res;
+}
+
 //
 
 double aterm(int n, double x, double t) {
@@ -417,6 +455,23 @@ arma::mat rmtrnorm(arma::mat mu, arma::mat U, arma::mat V) {
   
   arma::mat A = arma::chol(U);
   arma::mat B = arma::chol(V);
+  
+  arma::mat W = A * Xmat * B;
+  
+  arma::mat Y = W + mu;
+  
+  return(Y);
+}
+
+// [[Rcpp::export]]
+arma::mat rmtrnorm_chol(arma::mat mu, arma::mat A, arma::mat B) {
+  
+  arma::mat Xmat(mu.n_rows, mu.n_cols);
+  for(int i = 0; i < Xmat.n_rows; i++){
+    for(int j = 0; j < Xmat.n_cols; j++){
+      Xmat(i, j) = R::rnorm(0, 1);
+    }  
+  }
   
   arma::mat W = A * Xmat * B;
   
@@ -2558,6 +2613,831 @@ arma::mat update_logz_corr_cpp(arma::mat logz, arma::vec beta0,
   
 }
 
+/////////////////////////////////////
+//////////// LOGZ JOINT SAMPLER
+/////////////////////////////////////
+
+// [[Rcpp::export]]
+arma::vec kronProdVec(
+    arma::mat A,
+    arma::mat B,
+    arma::vec v){
+  
+  int n1 = A.n_rows;
+  int n2 = A.n_cols;
+  int m1 = B.n_rows;
+  int m2 = B.n_cols;
+  arma::mat v_mat(v);
+  v_mat.reshape(m2, n2);
+  
+  arma::mat C1 = B * v_mat;
+  
+  arma::mat C = C1 * arma::trans(A);
+  
+  C.reshape(n1 * m1, 1);
+  
+  return C;
+}
+
+
+arma::vec solveLT(arma::mat& L,
+                  arma::vec& v,
+                  bool lower){
+  
+  int n = L.n_rows;
+  
+  arma::vec x = arma::zeros(n);
+  
+  if(lower){
+    
+    // x[0] = v[0] / L(0,0);
+    
+    for(int i = 0; i < n; i++){
+      
+      double previousSum = 0;
+      for(int l = 0; l < i; l++){
+        previousSum += x[l] * L(i, l);
+      }
+      x[i] = (v[i] - previousSum) / L(i,i);
+      
+    }
+    
+  } else {
+    
+    for(int i = (n - 1); i >= 0; i--){
+      
+      double previousSum = 0;
+      for(int l = (n - 1); l > i; l--){
+        previousSum += x[l] * L(i, l);
+      }
+      x[i] = (v[i] - previousSum) / L(i,i);
+      
+    }
+    
+  }
+  
+  return x;
+}
+
+
+// [[Rcpp::export]]
+arma::mat update_logz_joint_cpp(arma::mat logz, arma::vec beta0,
+                                arma::mat X_z, arma::mat beta_z,
+                                arma::vec mu, arma::mat v,
+                                arma::vec lambda, arma::mat beta_theta,
+                                arma::mat X_w,
+                                arma::mat beta_w,
+                                arma::mat Sigma_n, 
+                                arma::mat Sigma_S, 
+                                arma::mat delta,
+                                arma::mat gamma,
+                                arma::vec sigma, 
+                                arma::vec M_site,
+                                int S_star,
+                                int emptyTubes){
+  
+  double df_t = 3;
+  
+  List list_CP_cpp = convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, delta, 
+                                       gamma, beta_theta, M_site, S_star, emptyTubes);
+  arma::vec beta_bar = list_CP_cpp["beta_bar"];
+  arma::vec mu_bar = list_CP_cpp["mu_bar"];
+  arma::vec beta_theta_bar = list_CP_cpp["beta_theta_bar"];
+  arma::mat logz_bar = list_CP_cpp["logz_bar"];
+  arma::mat v_bar = list_CP_cpp["v_bar"];
+  
+  int n = M_site.size();
+  int S = beta0.size();
+  int ncov_z = beta_z.n_rows;
+  int ncov_w_theta = X_w.n_cols;
+  
+  arma::mat Xz_beta = X_z * beta_z;
+  arma::mat Xw_beta = X_w * beta_w;
+  arma::mat Xw_beta_theta = arma::zeros(sum(M_site), S);
+  
+  if(ncov_w_theta > 0){
+    Xw_beta_theta = X_w * arma::trans(beta_theta.submat(0,2,S - 1,2 + (ncov_w_theta - 1)));  
+  }
+  
+  arma::mat vtilde_mat = arma::zeros(sum(M_site), S);
+  for(int l = 0; l < sum(M_site); l++){
+    for(int j = 0; j < S; j++){
+      vtilde_mat(l, j) = v_bar(l, j) - Xw_beta(l, j);
+    }
+  }
+  
+  // update parameters
+  
+  arma::mat U = Sigma_n;
+  arma::mat V = Sigma_S;
+  
+  arma::cube cholU = arma::zeros(n, n - 1, n - 1);
+  for(int i = 0; i < n; i++){
+    
+    arma::mat U_mimi = U;
+    U_mimi.shed_row(i);
+    U_mimi.shed_col(i);
+    
+    // arma::mat U_mi = U;
+    // U_mi.shed_row(i);
+    // 
+    // arma::mat U_mii = U.cols(i,i);
+    // U_mii.shed_row(i);
+    
+    arma::mat A1 = U_mimi;
+    
+    // Rcout << arma::chol(A1) << std::endl;
+    
+    cholU.subcube(arma::span(i), arma::span(), arma::span()) = arma::trans(arma::chol(A1));
+  }
+  
+  arma::cube cholV = arma::zeros(S, S - 1, S - 1);
+  for(int j = 0; j < S; j++){
+    
+    arma::mat V_mjmj = V;
+    V_mjmj.shed_row(j);
+    V_mjmj.shed_col(j);
+    
+    arma::mat A1 = V_mjmj;
+    
+    cholV.subcube(arma::span(j), arma::span(), arma::span()) = arma::trans(arma::chol(A1));
+  }
+  
+  // arma::vec beta0Xz_beta = beta_bar[j] + Xz_beta.col(j);
+  arma::mat beta0Xz_beta = X_z * beta_z;//beta_bar[j] + Xz_beta.col(j);
+  for(int j = 0; j < S; j++){
+    for(int i = 0; i < n; i++){
+      beta0Xz_beta(i, j) += beta_bar[j];
+    }
+  }
+  
+  for(int j = 0; j < S; j++){
+    
+    arma::mat V_mjmj = V;
+    V_mjmj.shed_row(j);
+    V_mjmj.shed_col(j);
+    
+    arma::mat Lj = cholV.subcube(arma::span(j), arma::span(), arma::span());
+    arma::mat Ltj = arma::trans(Lj);
+    
+    arma::mat V_mjj = V.cols(j,j);
+    V_mjj.shed_row(j);
+    arma::vec V_mjj2 = arma::conv_to<arma::vec>::from(V_mjj);
+    
+    arma::vec Lvmjj = solveLT(Lj, V_mjj2, true);
+    arma::mat Vtilde = arma::trans(Lvmjj) * Lvmjj;
+    
+    arma::vec w = solveLT(Lj, V_mjj2, true);
+    arma::mat Vtilde2 = arma::trans(solveLT(Ltj, w, false));
+    
+    arma::mat mu_2_mat = arma::zeros(n, S - 1);
+    for(int k1 = 0; k1 < S; k1++){
+      if(k1 < j){
+        for(int k2 = 0; k2 < n; k2++){
+          mu_2_mat(k2, k1) = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+        }
+      } else if(k1 > j){
+        for(int k2 = 0; k2 < n; k2++){
+          mu_2_mat(k2, k1 - 1) = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+        }
+      }
+    }
+    
+    int sum_m = 0;
+    for(int i = 0; i < n; i++){
+      
+      // compute posterior mean and standard deviation
+      
+      arma::mat U_mii = U.cols(i,i);
+      U_mii.shed_row(i);
+      arma::vec U_mii2 = arma::conv_to<arma::vec>::from(U_mii);
+      
+      arma::mat L = cholU.subcube(arma::span(i), arma::span(), arma::span());
+      arma::mat Lt = arma::trans(L);
+      
+      arma::vec w = solveLT(L,  U_mii2, true);
+      arma::vec x1 = solveLT(Lt, w, false);
+      
+      arma::vec btilde_1 = V(j, j) * U_mii;
+      
+      arma::mat Sigma12a2 = (Vtilde(0, 0) * U(i, i) - Vtilde(0, 0) * (arma::trans(U_mii) * x1));
+      
+      arma::mat Sigma_12x1x2 = arma::trans(btilde_1) * x1 + Sigma12a2(0,0);
+      
+      arma::mat postCov = V(j, j) * U(i, i) - Sigma_12x1x2;
+      
+      arma::vec mu_1 = arma::zeros(n - 1);
+      for(int k = 0; k < n; k++){
+        if(k < i){
+          mu_1[k] = logz_bar(k, j) - beta0Xz_beta(k, j);
+        } else if(k > i){
+          mu_1[k - 1] = logz_bar(k, j) - beta0Xz_beta(k, j);
+        }
+      }
+      
+      arma::mat mu_2_minusi = mu_2_mat;
+      mu_2_minusi.shed_row(i);
+      arma::vec b1_2 = mu_2_minusi * arma::trans(Vtilde2);
+      
+      arma::vec b1 = (mu_1 - b1_2) / (V(j,j) - Vtilde(0,0));
+      
+      w = solveLT(L,  b1, true);
+      arma::vec y1 = solveLT(Lt, w, false);
+      
+      arma::mat tb2y2 = mu_2_mat.rows(i,i) * arma::trans(Vtilde2) - Vtilde(0, 0) * (arma::trans(U_mii) * y1);
+      
+      arma::mat Sigma_12y1y2 = arma::trans(btilde_1) * y1 + tb2y2;
+      
+      double prior_mean = beta0Xz_beta(i, j) + Sigma_12y1y2(0, 0); 
+      double prior_sd = sqrt(postCov(0,0));
+      
+      // mu_2[k1 * n + k2] = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+      double logz_current = logz_bar(i, j);
+      
+      arma::uvec idxes = sum_m + linspace<uvec>(0, M_site[i] - 1, M_site[i]);
+      arma::vec y_all = delta.col(j);
+      y_all = y_all.elem(idxes);
+      arma::vec v_all = beta_theta_bar(j) + Xw_beta_theta.col(j);
+      v_all = v_all.elem(idxes);
+      double x_all = beta_theta(j, 1);
+      
+      // arma::vec y_all = arma::zeros(M_site[i]);
+      // arma::vec v_all = arma::zeros(M_site[i]);
+      // // double x_all = beta_theta(j, 1) / exp(lambda[j]);
+      // double x_all = beta_theta(j, 1);
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta_bar(j) +
+      //     // v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      arma::vec v_samples = vtilde_mat.col(j);
+      v_samples = v_samples.elem(idxes);
+      arma::uvec idxes_delta = find(y_all == 1);
+      v_samples = v_samples.elem(idxes_delta);
+      
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      // arma::vec aminusmu = arma::zeros(S - 1);
+      // 
+      // for(int l = 0; l < (S - 1); l++){
+      //   if(l < j){
+      //     aminusmu[l] = logz_bar(i, l) - (beta_bar[l] + Xz_beta(i, l));
+      //   } else {   
+      //     aminusmu[l] = logz_bar(i, l + 1) - (beta_bar[l + 1] + Xz_beta(i, l + 1));
+      //   }
+      // }
+      
+      // double prior_mean_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * aminusmu);
+      
+      // double prior_mean = beta0Xz_beta[i] + prior_mean_2;
+      
+      // double prior_var_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * Sigma_12);
+      
+      // double prior_sd = sqrt(Tau(j, j) - prior_var_2);
+      
+      
+      double logz_star = findzero_cpp(logz_current - 50,
+                                      logz_current + 50,
+                                      .01,
+                                      x_all,
+                                      y_all, v_all, v_samples, prior_sd,
+                                      sigma[j], prior_mean);
+      
+      double sd_star = sqrt(1 / (-h_f_cpp(logz_star,
+                                          x_all,
+                                          y_all, v_all, v_samples, prior_sd,
+                                          sigma[j], prior_mean)));
+      
+      double logz_new = rt2(logz_star, sd_star, df_t);
+      
+      double logprior = R::dnorm(logz_new, prior_mean, prior_sd, 1) -
+        R::dnorm(logz_current, prior_mean, prior_sd, 1);
+      
+      double loglikelihood_v = logposterior_logz_cpp(v_samples, sigma[j],
+                                                     logz_current, logz_new);
+      
+      double logposterior_ratio_logistic = logposterior_logz_logistic_cpp(y_all,
+                                                                          x_all,
+                                                                          v_all,
+                                                                          logz_current,
+                                                                          logz_new);
+      
+      double logproposal_ratio = log(dt2(logz_current, logz_star, sd_star, df_t)) - 
+        log(dt2(logz_new, logz_star, sd_star, df_t));
+      
+      double logposterior = logprior + loglikelihood_v + 
+        logposterior_ratio_logistic + logproposal_ratio;
+      
+      if(R::runif(0,1) < exp(logposterior)){
+        
+        logz_bar(i, j) = logz_new;
+        
+      }
+      
+      
+      sum_m += M_site[i]; 
+    }
+    
+  }
+  
+  List list_SP_cpp = convertCPtoSP_cpp(beta_bar,
+                                       lambda, mu_bar,
+                                       logz_bar, v_bar,
+                                       delta,
+                                       gamma,
+                                       beta_theta_bar,
+                                       M_site, S_star,
+                                       emptyTubes);
+  arma::mat logz2 = list_SP_cpp["logz"];
+  
+  return logz2;
+  
+}
+
+// [[Rcpp::export]]
+arma::mat update_logz_joint_fast_cpp(arma::mat logz, arma::vec beta0,
+                                     arma::mat X_z, arma::mat beta_z,
+                                     arma::vec mu, arma::mat v,
+                                     arma::vec lambda, arma::mat beta_theta,
+                                     arma::mat X_w,
+                                     arma::mat beta_w,
+                                     arma::mat Sigma_n, 
+                                     arma::mat Sigma_S, 
+                                     arma::mat chol_invSigma_n, 
+                                     arma::mat chol_invSigma_S, 
+                                     arma::mat delta,
+                                     arma::mat gamma,
+                                     arma::vec sigma, 
+                                     arma::vec M_site,
+                                     int S_star,
+                                     int emptyTubes){
+  
+  double df_t = 3;
+  
+  List list_CP_cpp = convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, delta, 
+                                       gamma, beta_theta, M_site, S_star, emptyTubes);
+  arma::vec beta_bar = list_CP_cpp["beta_bar"];
+  arma::vec mu_bar = list_CP_cpp["mu_bar"];
+  arma::vec beta_theta_bar = list_CP_cpp["beta_theta_bar"];
+  arma::mat logz_bar = list_CP_cpp["logz_bar"];
+  arma::mat v_bar = list_CP_cpp["v_bar"];
+  
+  int n = M_site.size();
+  int S = beta0.size();
+  int ncov_z = beta_z.n_rows;
+  int ncov_w_theta = X_w.n_cols;
+  
+  arma::mat Xz_beta = X_z * beta_z;
+  arma::mat Xw_beta = X_w * beta_w;
+  arma::mat Xw_beta_theta = arma::zeros(sum(M_site), S);
+  
+  if(ncov_w_theta > 0){
+    Xw_beta_theta = X_w * arma::trans(beta_theta.submat(0,2,S - 1,2 + (ncov_w_theta - 1)));  
+  }
+  
+  arma::mat vtilde_mat = arma::zeros(sum(M_site), S);
+  for(int l = 0; l < sum(M_site); l++){
+    for(int j = 0; j < S; j++){
+      vtilde_mat(l, j) = v_bar(l, j) - Xw_beta(l, j);
+    }
+  }
+  
+  // decorrelate logz
+  
+  arma::mat U = chol_invSigma_n;
+  arma::mat V = chol_invSigma_S;
+  
+  // arma::vec beta0Xz_beta = beta_bar[j] + Xz_beta.col(j);
+  arma::mat beta0Xz_beta = X_z * beta_z;//beta_bar[j] + Xz_beta.col(j);
+  for(int j = 0; j < S; j++){
+    for(int i = 0; i < n; i++){
+      beta0Xz_beta(i, j) += beta_bar[j];
+    }
+  }
+  
+  arma::mat logz_bar_tilde = U * (logz - beta0Xz_beta) * arma::trans(V);
+  
+  // update parameters
+  
+  for(int j = 0; j < S; j++){
+    
+    int sum_m = 0;
+    for(int i = 0; i < n; i++){
+      
+      double prior_mean = 0; 
+      double prior_sd = 1;
+      
+      // mu_2[k1 * n + k2] = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+      double logz_current = logz_bar_tilde(i, j);
+      
+      arma::uvec idxes = sum_m + linspace<uvec>(0, M_site[i] - 1, M_site[i]);
+      arma::vec y_all = delta.col(j);
+      y_all = y_all.elem(idxes);
+      arma::vec v_all = beta_theta_bar(j) + Xw_beta_theta.col(j);
+      v_all = v_all.elem(idxes);
+      double x_all = beta_theta(j, 1);
+      
+      // arma::vec y_all = arma::zeros(M_site[i]);
+      // arma::vec v_all = arma::zeros(M_site[i]);
+      // // double x_all = beta_theta(j, 1) / exp(lambda[j]);
+      // double x_all = beta_theta(j, 1);
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta_bar(j) +
+      //     // v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      arma::vec v_samples = vtilde_mat.col(j);
+      v_samples = v_samples.elem(idxes);
+      arma::uvec idxes_delta = find(y_all == 1);
+      v_samples = v_samples.elem(idxes_delta);
+      
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      // arma::vec aminusmu = arma::zeros(S - 1);
+      // 
+      // for(int l = 0; l < (S - 1); l++){
+      //   if(l < j){
+      //     aminusmu[l] = logz_bar(i, l) - (beta_bar[l] + Xz_beta(i, l));
+      //   } else {   
+      //     aminusmu[l] = logz_bar(i, l + 1) - (beta_bar[l + 1] + Xz_beta(i, l + 1));
+      //   }
+      // }
+      
+      // double prior_mean_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * aminusmu);
+      
+      // double prior_mean = beta0Xz_beta[i] + prior_mean_2;
+      
+      // double prior_var_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * Sigma_12);
+      
+      // double prior_sd = sqrt(Tau(j, j) - prior_var_2);
+      
+      
+      double logz_star = findzero_cpp(logz_current - 50,
+                                      logz_current + 50,
+                                      .01,
+                                      x_all,
+                                      y_all, v_all, v_samples, prior_sd,
+                                      sigma[j], prior_mean);
+      
+      double sd_star = sqrt(1 / (-h_f_cpp(logz_star,
+                                          x_all,
+                                          y_all, v_all, v_samples, prior_sd,
+                                          sigma[j], prior_mean)));
+      
+      double logz_new = rt2(logz_star, sd_star, df_t);
+      
+      double logprior = R::dnorm(logz_new, prior_mean, prior_sd, 1) -
+        R::dnorm(logz_current, prior_mean, prior_sd, 1);
+      
+      double loglikelihood_v = logposterior_logz_cpp(v_samples, sigma[j],
+                                                     logz_current, logz_new);
+      
+      double logposterior_ratio_logistic = logposterior_logz_logistic_cpp(y_all,
+                                                                          x_all,
+                                                                          v_all,
+                                                                          logz_current,
+                                                                          logz_new);
+      
+      double logproposal_ratio = log(dt2(logz_current, logz_star, sd_star, df_t)) - 
+        log(dt2(logz_new, logz_star, sd_star, df_t));
+      
+      double logposterior = logprior + loglikelihood_v + 
+        logposterior_ratio_logistic + logproposal_ratio;
+      
+      if(R::runif(0,1) < exp(logposterior)){
+        
+        logz_bar_tilde(i, j) = logz_new;
+        
+      }
+      
+      
+      sum_m += M_site[i]; 
+    }
+    
+  }
+  
+  logz_bar = arma::inv(U) * logz_bar_tilde * arma::inv(arma::trans(V)) + beta0Xz_beta;
+  
+  List list_SP_cpp = convertCPtoSP_cpp(beta_bar,
+                                       lambda, mu_bar,
+                                       logz_bar, v_bar,
+                                       delta,
+                                       gamma,
+                                       beta_theta_bar,
+                                       M_site, S_star,
+                                       emptyTubes);
+  arma::mat logz2 = list_SP_cpp["logz"];
+  
+  return logz2;
+  
+}
+
+
+/// SPEED 
+
+// [[Rcpp::export]]
+arma::mat update_logz_joint_speed_cpp(arma::mat logz, arma::vec beta0,
+                                      arma::mat X_z, arma::mat beta_z,
+                                      arma::vec mu, arma::mat v,
+                                      arma::vec lambda, arma::mat beta_theta,
+                                      arma::mat X_w,
+                                      arma::mat beta_w,
+                                      arma::mat Sigma_n, 
+                                      arma::mat invSigma_n, 
+                                      arma::mat Sigma_S, 
+                                      arma::mat delta,
+                                      arma::mat gamma,
+                                      arma::vec sigma, 
+                                      arma::vec M_site,
+                                      int S_star,
+                                      int emptyTubes){
+  
+  double df_t = 3;
+  
+  List list_CP_cpp = convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, delta, 
+                                       gamma, beta_theta, M_site, S_star, emptyTubes);
+  arma::vec beta_bar = list_CP_cpp["beta_bar"];
+  arma::vec mu_bar = list_CP_cpp["mu_bar"];
+  arma::vec beta_theta_bar = list_CP_cpp["beta_theta_bar"];
+  arma::mat logz_bar = list_CP_cpp["logz_bar"];
+  arma::mat v_bar = list_CP_cpp["v_bar"];
+  
+  int n = M_site.size();
+  int S = beta0.size();
+  int ncov_z = beta_z.n_rows;
+  int ncov_w_theta = X_w.n_cols;
+  
+  arma::mat Xz_beta = X_z * beta_z;
+  arma::mat Xw_beta = X_w * beta_w;
+  arma::mat Xw_beta_theta = arma::zeros(sum(M_site), S);
+  
+  if(ncov_w_theta > 0){
+    Xw_beta_theta = X_w * arma::trans(beta_theta.submat(0,2,S - 1,2 + (ncov_w_theta - 1)));  
+  }
+  
+  arma::mat vtilde_mat = arma::zeros(sum(M_site), S);
+  for(int l = 0; l < sum(M_site); l++){
+    for(int j = 0; j < S; j++){
+      vtilde_mat(l, j) = v_bar(l, j) - Xw_beta(l, j);
+    }
+  }
+  
+  // update parameters
+  
+  arma::mat U = Sigma_n;
+  arma::mat V = Sigma_S;
+  arma::mat invU = invSigma_n;
+  
+  // arma::vec beta0Xz_beta = beta_bar[j] + Xz_beta.col(j);
+  arma::mat beta0Xz_beta = X_z * beta_z;//beta_bar[j] + Xz_beta.col(j);
+  for(int j = 0; j < S; j++){
+    for(int i = 0; i < n; i++){
+      beta0Xz_beta(i, j) += beta_bar[j];
+    }
+  }
+  
+  for(int j = 0; j < S; j++){
+    
+    // arma::mat Sigma_22 = removeRowCol(Tau, j);
+    // arma::mat invSigma_22 = arma::inv(Sigma_22);
+    // arma::vec Sigma_12 = removeRowColj(Tau, j);
+    
+    arma::mat V_mjmj = V;
+    V_mjmj.shed_row(j);
+    V_mjmj.shed_col(j);
+    
+    arma::mat inv_V_mjmj = inv(V_mjmj);
+    
+    arma::mat V_mjj = V.cols(j,j);
+    V_mjj.shed_row(j);
+    
+    arma::mat Sigma_tilde_22 = kron(V_mjmj, U); //
+    
+    int sum_m = 0;
+    for(int i = 0; i < n; i++){
+      
+      // compute posterior mean and standard deviation
+      
+      arma::mat U_mimi = U;
+      U_mimi.shed_row(i);
+      U_mimi.shed_col(i);
+      
+      arma::mat U_mi = U;
+      U_mi.shed_row(i);
+      
+      arma::mat U_mii = U.cols(i,i);
+      U_mii.shed_row(i);
+      
+      arma::mat b_1_1 = V.cols(j,j).rows(j,j);//V(j, j); 
+      arma::mat b_1_2 = U_mii;
+      
+      arma::mat b_2_1 = V_mjj;
+      arma::mat b_2_2 = U.col(i);
+      
+      arma::mat b_1 = kron(b_1_1, b_1_2);
+      arma::mat b_2 = kron(b_2_1, b_2_2);
+      
+      arma::mat Sigma_21 = join_cols(b_1, b_2);
+      
+      arma::mat Sigma_12 = arma::trans(Sigma_21);
+      
+      arma::mat A1 = kron(b_1_1, U_mimi) - 
+        kron(arma::trans(V_mjj) * (inv_V_mjmj * V_mjj),
+             U_mi * invU * arma::trans(U_mi));
+      
+      arma::vec b1_2_1 = inv_V_mjmj * V_mjj;
+      arma::vec b1_2_2 = invU * U.col(i);
+      
+      arma::vec b1 = kron(b_1_1, b_1_2) - 
+        kron(arma::trans(V_mjj) * b1_2_1, U_mi * b1_2_2);
+      
+      arma::vec x1 = solve(A1, b1);
+      
+      arma::vec x2 = kronProdVec(inv_V_mjmj, invU, 
+                                 b_2 - 
+                                   kronProdVec(V_mjj, arma::trans(U_mi), x1));
+      
+      arma::vec x = join_cols(x1, x2); 
+      
+      arma::mat Sigma_12x = Sigma_12 * x;
+      
+      arma::mat postCov = V(j, j) * U(i, i) - Sigma_12x;
+      
+      arma::vec mu_1 = arma::zeros(n - 1);
+      for(int k = 0; k < n; k++){
+        if(k < i){
+          // mu_1[k] = l[j * n + k] - m[j * n + k];
+          mu_1[k] = logz_bar(k, j) - beta0Xz_beta(k, j);
+        } else if(k > i){
+          // mu_1[k - 1] = l[j * n + k] - m[j * n + k];
+          mu_1[k - 1] = logz_bar(k, j) - beta0Xz_beta(k, j);
+        }
+      }
+      // mu_1 <- m[setdiff((j - 1) * n + 1:n, (j - 1) * n + i)]
+      arma::vec mu_2 = arma::zeros((S - 1) * n);
+      for(int k1 = 0; k1 < S; k1++){
+        if(k1 < j){
+          for(int k2 = 0; k2 < n; k2++){
+            // mu_2[k1 * n + k2] = l[k1 * n + k2] - m[k1 * n + k2];
+            mu_2[k1 * n + k2] = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+          }  
+        } else if(k1 > j){
+          for(int k2 = 0; k2 < n; k2++){
+            // mu_2[(k1 - 1) * n + k2] = l[k1 * n + k2] - m[k1 * n + k2];
+            mu_2[(k1 - 1) * n + k2] = logz_bar(k2, k1) - beta0Xz_beta(k2, k1);
+          }  
+        }
+        
+      }
+      
+      b1 = mu_1 - 
+        kronProdVec(arma::trans(V_mjj) * inv_V_mjmj, U_mi * invU, mu_2);
+      
+      arma::vec y1 = solve(A1, b1);
+      
+      arma::vec y2 = kronProdVec(inv_V_mjmj, invU, 
+                                 mu_2 -  
+                                   kronProdVec(V_mjj, arma::trans(U_mi), y1));
+      
+      arma::vec y = join_cols(y1, y2);
+      
+      arma::mat Sigma_12y = Sigma_12 * y;
+      
+      double prior_mean = beta0Xz_beta(i, j) + Sigma_12y(0, 0); 
+      double prior_sd = sqrt(postCov(0,0));
+      
+      double logz_current = logz_bar(i, j);
+      
+      arma::uvec idxes = sum_m + linspace<uvec>(0, M_site[i] - 1, M_site[i]);
+      arma::vec y_all = delta.col(j);
+      y_all = y_all.elem(idxes);
+      arma::vec v_all = beta_theta_bar(j) + Xw_beta_theta.col(j);
+      v_all = v_all.elem(idxes);
+      double x_all = beta_theta(j, 1);
+      
+      // arma::vec y_all = arma::zeros(M_site[i]);
+      // arma::vec v_all = arma::zeros(M_site[i]);
+      // // double x_all = beta_theta(j, 1) / exp(lambda[j]);
+      // double x_all = beta_theta(j, 1);
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta_bar(j) +
+      //     // v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      arma::vec v_samples = vtilde_mat.col(j);
+      v_samples = v_samples.elem(idxes);
+      arma::uvec idxes_delta = find(y_all == 1);
+      v_samples = v_samples.elem(idxes_delta);
+      
+      // for(int m = 0; m < M_site[i]; m++){
+      //   
+      //   y_all[m] = delta(sum_m + m, j);
+      //   v_all[m] = beta_theta(j, 0) +
+      //     Xw_beta_theta(m + sum_m, j);
+      //   
+      // }
+      
+      // arma::vec aminusmu = arma::zeros(S - 1);
+      // 
+      // for(int l = 0; l < (S - 1); l++){
+      //   if(l < j){
+      //     aminusmu[l] = logz_bar(i, l) - (beta_bar[l] + Xz_beta(i, l));
+      //   } else {   
+      //     aminusmu[l] = logz_bar(i, l + 1) - (beta_bar[l + 1] + Xz_beta(i, l + 1));
+      //   }
+      // }
+      
+      // double prior_mean_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * aminusmu);
+      
+      // double prior_mean = beta0Xz_beta[i] + prior_mean_2;
+      
+      // double prior_var_2 = arma::as_scalar(arma::trans(Sigma_12) * invSigma_22 * Sigma_12);
+      
+      // double prior_sd = sqrt(Tau(j, j) - prior_var_2);
+      
+      
+      double logz_star = findzero_cpp(logz_current - 50,
+                                      logz_current + 50,
+                                      .01,
+                                      x_all,
+                                      y_all, v_all, v_samples, prior_sd,
+                                      sigma[j], prior_mean);
+      
+      double sd_star = sqrt(1 / (-h_f_cpp(logz_star,
+                                          x_all,
+                                          y_all, v_all, v_samples, prior_sd,
+                                          sigma[j], prior_mean)));
+      
+      double logz_new = rt2(logz_star, sd_star, df_t);
+      
+      double logprior = R::dnorm(logz_new, prior_mean, prior_sd, 1) -
+        R::dnorm(logz_current, prior_mean, prior_sd, 1);
+      
+      double loglikelihood_v = logposterior_logz_cpp(v_samples, sigma[j],
+                                                     logz_current, logz_new);
+      
+      double logposterior_ratio_logistic = logposterior_logz_logistic_cpp(y_all,
+                                                                          x_all,
+                                                                          v_all,
+                                                                          logz_current,
+                                                                          logz_new);
+      
+      double logproposal_ratio = log(dt2(logz_current, logz_star, sd_star, df_t)) - 
+        log(dt2(logz_new, logz_star, sd_star, df_t));
+      
+      double logposterior = logprior + loglikelihood_v + 
+        logposterior_ratio_logistic + logproposal_ratio;
+      
+      if(R::runif(0,1) < exp(logposterior)){
+        
+        logz_bar(i, j) = logz_new;
+        
+      }
+      
+      
+      sum_m += M_site[i]; 
+    }
+    
+  }
+  
+  List list_SP_cpp = convertCPtoSP_cpp(beta_bar,
+                                       lambda, mu_bar,
+                                       logz_bar, v_bar,
+                                       delta,
+                                       gamma,
+                                       beta_theta_bar,
+                                       M_site, S_star,
+                                       emptyTubes);
+  arma::mat logz2 = list_SP_cpp["logz"];
+  
+  return logz2;
+  
+}
+
 //////////////////////////////////////////
 ///////// LAMBDA SAMPLER
 //////////////////////////////////////////
@@ -2938,15 +3818,17 @@ arma::vec update_sigma_cpp(arma::vec sigma,
 
 // [[Rcpp::export]]
 arma::vec update_tau_cpp(arma::vec tau, 
-                         arma::mat logz, 
-                         arma::mat X_z, 
-                         arma::mat beta_z, 
-                         arma::vec beta0, 
+                         arma::mat logz_tilde,
                          double a_tau, 
                          arma::vec b_tau){
   
-  int S = beta0.size();
-  int n = X_z.n_rows;
+  // arma::mat logz,
+  // arma::mat X_z,
+  // arma::mat beta_z,
+  // arma::vec beta0,
+  
+  int S = logz_tilde.n_cols;
+  int n = logz_tilde.n_rows;
   
   for(int j = 0; j < S; j++){
     
@@ -2955,8 +3837,9 @@ arma::vec update_tau_cpp(arma::vec tau,
     
     for (int i = 0; i < n; i++) {
       
-      double Xz_betaz = arma::as_scalar(X_z.row(i) * beta_z.col(j));
-      sumsq += pow((Xz_betaz + beta0[j]) - logz(i,j), 2);
+      // double Xz_betaz = arma::as_scalar(X_z.row(i) * beta_z.col(j));
+      // sumsq += pow((Xz_betaz + beta0[j]) - logz(i,j), 2);
+      sumsq += pow(logz_tilde(i,j), 2);
       n_samples += 1;
       
     }

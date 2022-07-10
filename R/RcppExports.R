@@ -17,6 +17,10 @@ dmt_cpp <- function(x, nu, mu, Sigma, returnLog) {
     .Call(`_eDNAPlus_dmt_cpp`, x, nu, mu, Sigma, returnLog)
 }
 
+K2 <- function(x1, x2, a, l) {
+    .Call(`_eDNAPlus_K2`, x1, x2, a, l)
+}
+
 rpg <- function(n, z) {
     .Call(`_eDNAPlus_rpg`, n, z)
 }
@@ -43,6 +47,10 @@ dmvnorm_cpp <- function(data, m, Sigma, returnLog) {
 
 rmtrnorm <- function(mu, U, V) {
     .Call(`_eDNAPlus_rmtrnorm`, mu, U, V)
+}
+
+rmtrnorm_chol <- function(mu, A, B) {
+    .Call(`_eDNAPlus_rmtrnorm_chol`, mu, A, B)
 }
 
 update_betatheta11_cpp <- function(logz, beta_theta11, theta11, delta, X_w, M_site, b_theta11, B_theta11, updateBetaTheta0, updateBetaTheta1) {
@@ -93,6 +101,22 @@ update_logz_corr_cpp <- function(logz, beta0, X_z, beta_z, mu, v, lambda, beta_t
     .Call(`_eDNAPlus_update_logz_corr_cpp`, logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Tau, delta, gamma, sigma, M_site, S_star, emptyTubes)
 }
 
+kronProdVec <- function(A, B, v) {
+    .Call(`_eDNAPlus_kronProdVec`, A, B, v)
+}
+
+update_logz_joint_cpp <- function(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes) {
+    .Call(`_eDNAPlus_update_logz_joint_cpp`, logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes)
+}
+
+update_logz_joint_fast_cpp <- function(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, chol_invSigma_n, chol_invSigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes) {
+    .Call(`_eDNAPlus_update_logz_joint_fast_cpp`, logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, chol_invSigma_n, chol_invSigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes)
+}
+
+update_logz_joint_speed_cpp <- function(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, invSigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes) {
+    .Call(`_eDNAPlus_update_logz_joint_speed_cpp`, logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, invSigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes)
+}
+
 logdpost_cpp <- function(lambda, X_l, betatheta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda) {
     .Call(`_eDNAPlus_logdpost_cpp`, lambda, X_l, betatheta1, Xwbetatheta, delta, beta_barj, sigma_beta, mu_barj, sigma_mu, lambda_priorj, sigma_lambda)
 }
@@ -117,8 +141,8 @@ update_sigma_cpp <- function(sigma, lambda, beta_z, beta0, mu, logz, v, X_w, bet
     .Call(`_eDNAPlus_update_sigma_cpp`, sigma, lambda, beta_z, beta0, mu, logz, v, X_w, beta_w, delta, gamma, beta_theta, a_sigma, b_sigma, M_site, S_star, emptyTubes)
 }
 
-update_tau_cpp <- function(tau, logz, X_z, beta_z, beta0, a_tau, b_tau) {
-    .Call(`_eDNAPlus_update_tau_cpp`, tau, logz, X_z, beta_z, beta0, a_tau, b_tau)
+update_tau_cpp <- function(tau, logz_tilde, a_tau, b_tau) {
+    .Call(`_eDNAPlus_update_tau_cpp`, tau, logz_tilde, a_tau, b_tau)
 }
 
 Matmimi <- function(M, i) {

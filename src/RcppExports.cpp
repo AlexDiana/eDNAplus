@@ -66,6 +66,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// K2
+arma::mat K2(arma::mat x1, arma::mat x2, double a, double l);
+RcppExport SEXP _eDNAPlus_K2(SEXP x1SEXP, SEXP x2SEXP, SEXP aSEXP, SEXP lSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x1(x1SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x2(x2SEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type l(lSEXP);
+    rcpp_result_gen = Rcpp::wrap(K2(x1, x2, a, l));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rpg
 double rpg(int n, double z);
 RcppExport SEXP _eDNAPlus_rpg(SEXP nSEXP, SEXP zSEXP) {
@@ -155,6 +169,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type U(USEXP);
     Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
     rcpp_result_gen = Rcpp::wrap(rmtrnorm(mu, U, V));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rmtrnorm_chol
+arma::mat rmtrnorm_chol(arma::mat mu, arma::mat A, arma::mat B);
+RcppExport SEXP _eDNAPlus_rmtrnorm_chol(SEXP muSEXP, SEXP ASEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type A(ASEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmtrnorm_chol(mu, A, B));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -390,6 +417,106 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// kronProdVec
+arma::vec kronProdVec(arma::mat A, arma::mat B, arma::vec v);
+RcppExport SEXP _eDNAPlus_kronProdVec(SEXP ASEXP, SEXP BSEXP, SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type A(ASEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type B(BSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(kronProdVec(A, B, v));
+    return rcpp_result_gen;
+END_RCPP
+}
+// update_logz_joint_cpp
+arma::mat update_logz_joint_cpp(arma::mat logz, arma::vec beta0, arma::mat X_z, arma::mat beta_z, arma::vec mu, arma::mat v, arma::vec lambda, arma::mat beta_theta, arma::mat X_w, arma::mat beta_w, arma::mat Sigma_n, arma::mat Sigma_S, arma::mat delta, arma::mat gamma, arma::vec sigma, arma::vec M_site, int S_star, int emptyTubes);
+RcppExport SEXP _eDNAPlus_update_logz_joint_cpp(SEXP logzSEXP, SEXP beta0SEXP, SEXP X_zSEXP, SEXP beta_zSEXP, SEXP muSEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP beta_thetaSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP Sigma_nSEXP, SEXP Sigma_SSEXP, SEXP deltaSEXP, SEXP gammaSEXP, SEXP sigmaSEXP, SEXP M_siteSEXP, SEXP S_starSEXP, SEXP emptyTubesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_z(X_zSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_z(beta_zSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_theta(beta_thetaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_w(X_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_w(beta_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_n(Sigma_nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_S(Sigma_SSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
+    Rcpp::traits::input_parameter< int >::type S_star(S_starSEXP);
+    Rcpp::traits::input_parameter< int >::type emptyTubes(emptyTubesSEXP);
+    rcpp_result_gen = Rcpp::wrap(update_logz_joint_cpp(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes));
+    return rcpp_result_gen;
+END_RCPP
+}
+// update_logz_joint_fast_cpp
+arma::mat update_logz_joint_fast_cpp(arma::mat logz, arma::vec beta0, arma::mat X_z, arma::mat beta_z, arma::vec mu, arma::mat v, arma::vec lambda, arma::mat beta_theta, arma::mat X_w, arma::mat beta_w, arma::mat Sigma_n, arma::mat Sigma_S, arma::mat chol_invSigma_n, arma::mat chol_invSigma_S, arma::mat delta, arma::mat gamma, arma::vec sigma, arma::vec M_site, int S_star, int emptyTubes);
+RcppExport SEXP _eDNAPlus_update_logz_joint_fast_cpp(SEXP logzSEXP, SEXP beta0SEXP, SEXP X_zSEXP, SEXP beta_zSEXP, SEXP muSEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP beta_thetaSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP Sigma_nSEXP, SEXP Sigma_SSEXP, SEXP chol_invSigma_nSEXP, SEXP chol_invSigma_SSEXP, SEXP deltaSEXP, SEXP gammaSEXP, SEXP sigmaSEXP, SEXP M_siteSEXP, SEXP S_starSEXP, SEXP emptyTubesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_z(X_zSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_z(beta_zSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_theta(beta_thetaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_w(X_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_w(beta_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_n(Sigma_nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_S(Sigma_SSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type chol_invSigma_n(chol_invSigma_nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type chol_invSigma_S(chol_invSigma_SSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
+    Rcpp::traits::input_parameter< int >::type S_star(S_starSEXP);
+    Rcpp::traits::input_parameter< int >::type emptyTubes(emptyTubesSEXP);
+    rcpp_result_gen = Rcpp::wrap(update_logz_joint_fast_cpp(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, Sigma_S, chol_invSigma_n, chol_invSigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes));
+    return rcpp_result_gen;
+END_RCPP
+}
+// update_logz_joint_speed_cpp
+arma::mat update_logz_joint_speed_cpp(arma::mat logz, arma::vec beta0, arma::mat X_z, arma::mat beta_z, arma::vec mu, arma::mat v, arma::vec lambda, arma::mat beta_theta, arma::mat X_w, arma::mat beta_w, arma::mat Sigma_n, arma::mat invSigma_n, arma::mat Sigma_S, arma::mat delta, arma::mat gamma, arma::vec sigma, arma::vec M_site, int S_star, int emptyTubes);
+RcppExport SEXP _eDNAPlus_update_logz_joint_speed_cpp(SEXP logzSEXP, SEXP beta0SEXP, SEXP X_zSEXP, SEXP beta_zSEXP, SEXP muSEXP, SEXP vSEXP, SEXP lambdaSEXP, SEXP beta_thetaSEXP, SEXP X_wSEXP, SEXP beta_wSEXP, SEXP Sigma_nSEXP, SEXP invSigma_nSEXP, SEXP Sigma_SSEXP, SEXP deltaSEXP, SEXP gammaSEXP, SEXP sigmaSEXP, SEXP M_siteSEXP, SEXP S_starSEXP, SEXP emptyTubesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_z(X_zSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_z(beta_zSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_theta(beta_thetaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type X_w(X_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type beta_w(beta_wSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_n(Sigma_nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type invSigma_n(invSigma_nSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma_S(Sigma_SSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type M_site(M_siteSEXP);
+    Rcpp::traits::input_parameter< int >::type S_star(S_starSEXP);
+    Rcpp::traits::input_parameter< int >::type emptyTubes(emptyTubesSEXP);
+    rcpp_result_gen = Rcpp::wrap(update_logz_joint_speed_cpp(logz, beta0, X_z, beta_z, mu, v, lambda, beta_theta, X_w, beta_w, Sigma_n, invSigma_n, Sigma_S, delta, gamma, sigma, M_site, S_star, emptyTubes));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logdpost_cpp
 double logdpost_cpp(double lambda, NumericVector X_l, double betatheta1, NumericVector Xwbetatheta, arma::vec delta, double beta_barj, double sigma_beta, double mu_barj, double sigma_mu, double lambda_priorj, double sigma_lambda);
 RcppExport SEXP _eDNAPlus_logdpost_cpp(SEXP lambdaSEXP, SEXP X_lSEXP, SEXP betatheta1SEXP, SEXP XwbetathetaSEXP, SEXP deltaSEXP, SEXP beta_barjSEXP, SEXP sigma_betaSEXP, SEXP mu_barjSEXP, SEXP sigma_muSEXP, SEXP lambda_priorjSEXP, SEXP sigma_lambdaSEXP) {
@@ -529,19 +656,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // update_tau_cpp
-arma::vec update_tau_cpp(arma::vec tau, arma::mat logz, arma::mat X_z, arma::mat beta_z, arma::vec beta0, double a_tau, arma::vec b_tau);
-RcppExport SEXP _eDNAPlus_update_tau_cpp(SEXP tauSEXP, SEXP logzSEXP, SEXP X_zSEXP, SEXP beta_zSEXP, SEXP beta0SEXP, SEXP a_tauSEXP, SEXP b_tauSEXP) {
+arma::vec update_tau_cpp(arma::vec tau, arma::mat logz_tilde, double a_tau, arma::vec b_tau);
+RcppExport SEXP _eDNAPlus_update_tau_cpp(SEXP tauSEXP, SEXP logz_tildeSEXP, SEXP a_tauSEXP, SEXP b_tauSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type tau(tauSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type logz(logzSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type X_z(X_zSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type beta_z(beta_zSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type beta0(beta0SEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type logz_tilde(logz_tildeSEXP);
     Rcpp::traits::input_parameter< double >::type a_tau(a_tauSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type b_tau(b_tauSEXP);
-    rcpp_result_gen = Rcpp::wrap(update_tau_cpp(tau, logz, X_z, beta_z, beta0, a_tau, b_tau));
+    rcpp_result_gen = Rcpp::wrap(update_tau_cpp(tau, logz_tilde, a_tau, b_tau));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -973,6 +1097,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_rt2", (DL_FUNC) &_eDNAPlus_rt2, 3},
     {"_eDNAPlus_mrt2", (DL_FUNC) &_eDNAPlus_mrt2, 3},
     {"_eDNAPlus_dmt_cpp", (DL_FUNC) &_eDNAPlus_dmt_cpp, 5},
+    {"_eDNAPlus_K2", (DL_FUNC) &_eDNAPlus_K2, 4},
     {"_eDNAPlus_rpg", (DL_FUNC) &_eDNAPlus_rpg, 2},
     {"_eDNAPlus_lambertW0_CS", (DL_FUNC) &_eDNAPlus_lambertW0_CS, 1},
     {"_eDNAPlus_lambertWm1_CS", (DL_FUNC) &_eDNAPlus_lambertWm1_CS, 1},
@@ -980,6 +1105,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_sample_betaPG", (DL_FUNC) &_eDNAPlus_sample_betaPG, 6},
     {"_eDNAPlus_dmvnorm_cpp", (DL_FUNC) &_eDNAPlus_dmvnorm_cpp, 4},
     {"_eDNAPlus_rmtrnorm", (DL_FUNC) &_eDNAPlus_rmtrnorm, 3},
+    {"_eDNAPlus_rmtrnorm_chol", (DL_FUNC) &_eDNAPlus_rmtrnorm_chol, 3},
     {"_eDNAPlus_update_betatheta11_cpp", (DL_FUNC) &_eDNAPlus_update_betatheta11_cpp, 10},
     {"_eDNAPlus_rinvgamma_cpp", (DL_FUNC) &_eDNAPlus_rinvgamma_cpp, 2},
     {"_eDNAPlus_update_betaw_cpp", (DL_FUNC) &_eDNAPlus_update_betaw_cpp, 8},
@@ -992,13 +1118,17 @@ static const R_CallMethodDef CallEntries[] = {
     {"_eDNAPlus_h_f_cpp", (DL_FUNC) &_eDNAPlus_h_f_cpp, 8},
     {"_eDNAPlus_update_logz_cpp", (DL_FUNC) &_eDNAPlus_update_logz_cpp, 17},
     {"_eDNAPlus_update_logz_corr_cpp", (DL_FUNC) &_eDNAPlus_update_logz_corr_cpp, 17},
+    {"_eDNAPlus_kronProdVec", (DL_FUNC) &_eDNAPlus_kronProdVec, 3},
+    {"_eDNAPlus_update_logz_joint_cpp", (DL_FUNC) &_eDNAPlus_update_logz_joint_cpp, 18},
+    {"_eDNAPlus_update_logz_joint_fast_cpp", (DL_FUNC) &_eDNAPlus_update_logz_joint_fast_cpp, 20},
+    {"_eDNAPlus_update_logz_joint_speed_cpp", (DL_FUNC) &_eDNAPlus_update_logz_joint_speed_cpp, 19},
     {"_eDNAPlus_logdpost_cpp", (DL_FUNC) &_eDNAPlus_logdpost_cpp, 11},
     {"_eDNAPlus_logdpost_cpp_beta0", (DL_FUNC) &_eDNAPlus_logdpost_cpp_beta0, 12},
     {"_eDNAPlus_der2_logdpost_cpp", (DL_FUNC) &_eDNAPlus_der2_logdpost_cpp, 11},
     {"_eDNAPlus_der2_logdpost_cpp_beta0", (DL_FUNC) &_eDNAPlus_der2_logdpost_cpp_beta0, 12},
     {"_eDNAPlus_update_mu_cpp", (DL_FUNC) &_eDNAPlus_update_mu_cpp, 15},
     {"_eDNAPlus_update_sigma_cpp", (DL_FUNC) &_eDNAPlus_update_sigma_cpp, 17},
-    {"_eDNAPlus_update_tau_cpp", (DL_FUNC) &_eDNAPlus_update_tau_cpp, 7},
+    {"_eDNAPlus_update_tau_cpp", (DL_FUNC) &_eDNAPlus_update_tau_cpp, 4},
     {"_eDNAPlus_Matmimi", (DL_FUNC) &_eDNAPlus_Matmimi, 2},
     {"_eDNAPlus_Matimi", (DL_FUNC) &_eDNAPlus_Matimi, 2},
     {"_eDNAPlus_sample_GraphHorseshoe", (DL_FUNC) &_eDNAPlus_sample_GraphHorseshoe, 4},

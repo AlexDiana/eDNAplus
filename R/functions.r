@@ -159,11 +159,11 @@ update_lambda_CP <- function(beta0, beta_z, logz,
 
 
 update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz, 
-                             mu, lambda, v, u, lambda_ijk, r_nb,
-                             c_imk, delta, gamma, X_w, beta_theta, 
-                             M_site, tau, sigma_mu,
-                             lambda_prior, sigma_lambda,
-                             S_star, emptyTubes){
+                                   mu, lambda, v, u, lambda_ijk, r_nb,
+                                   c_imk, delta, gamma, X_w, beta_theta, 
+                                   M_site, tau, sigma_mu,
+                                   lambda_prior, sigma_lambda,
+                                   S_star, emptyTubes){
   
   df_t  = 3
   
@@ -194,9 +194,9 @@ update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz,
     
     optim_fun <- function(x){
       -logdpost_cpp_beta0(x, X_l, 
-                    beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
-                    logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
-                    sigma_lambda)
+                          beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                          logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                          sigma_lambda)
     }
     
     # lambda_star <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10), tol = .001)$minimum
@@ -218,9 +218,9 @@ update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz,
     lambda_star <- optimize(optim_fun, c(lambda[j] - 10, lambda[j] + 10))$minimum
     
     sd_star <-  1 / sqrt(-der2_logdpost_cpp_beta0(lambda_star, X_l, 
-                                            beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
-                                            logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
-                                            sigma_lambda))
+                                                  beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                                  logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                                  sigma_lambda))
     
     # lambda_grid <- seq(lambda[j] - 3, lambda[j] + 3, length.out = 100)
     # # lambda_grid <- seq(lambda_star - 01, lambda_star + 01, length.out = 100)
@@ -245,13 +245,13 @@ update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz,
       log(dt2(lambda_new, lambda_star, sd_star, df_t))
     
     logposterior <- logdpost_cpp_beta0(lambda[j], X_l, 
-                                 beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
-                                 logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
-                                 sigma_lambda)
+                                       beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                       logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                       sigma_lambda)
     logposterior_star <- logdpost_cpp_beta0(lambda_new, X_l, 
-                                      beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
-                                      logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
-                                      sigma_lambda)
+                                            beta_theta[j,2], Xwbetatheta, Xbetalogz, delta[,j], 
+                                            logz_bar[,j], tau[j], mu_bar[j], sigma_mu, lambda_prior[j], 
+                                            sigma_lambda)
     
     (mh_ratio <- exp(logposterior_star - logposterior + logproposal_ratio))
     
@@ -310,7 +310,8 @@ update_lambda_CP_beta0 <- function(beta0, beta_z, X_z, logz,
 }
 
 update_lambda_NP <- function(lambda_ijk, c_imk, mu,
-                             r_nb, v, u,
+                             r_nb, v, u, 
+                             M_site, emptyTubes, K,
                              lambda_prior, sigma_lambda){
   
   S <- length(mu)
@@ -480,20 +481,24 @@ update_lambda_tilde_NB <- function(y, c_imk, mu_tilde, n_tilde,
 
 update_Tau <- function(X_z, logz, beta0, beta_z,
                        Tau_params, Tau_priors,
-                       jointSpecies){
+                       jointSpecies, spatialCorr,
+                       chol_inv_Sigma_n){
   
+  logz_tilde <- logz - cbind(1, X_z) %*% rbind(t(beta0), beta_z)
+  
+  if(spatialCorr){
+    logz_tilde <- chol_inv_Sigma_n %*% logz_tilde
+  }
   
   if(jointSpecies){
-    
-    logz_tilde <- logz - cbind(1, X_z) %*% rbind(t(beta0), beta_z)
     
     n <- nrow(logz_tilde)
     d <- ncol(logz_tilde)
     
-    # sum_S <- 0
-    # S_matrices <- sapply(1:n, function(i){
-    #   sum_S <<- sum_S + logz_tilde[i,] %*% t(logz_tilde[i,]) 
-    # })
+    sum_S <- 0
+    S_matrices <- sapply(1:n, function(i){
+      sum_S <<- sum_S + logz_tilde[i,] %*% t(logz_tilde[i,]) 
+    })
     
     sum_S <- t(logz_tilde) %*% logz_tilde
     
@@ -514,8 +519,11 @@ update_Tau <- function(X_z, logz, beta0, beta_z,
     
     tau <- Tau_params$tau
     S <- length(tau)
-    tau <- update_tau_cpp(tau, logz, X_z, beta_z, beta0,
+    
+    tau <- update_tau_cpp(tau, logz_tilde, 
                           a_tau, rep(b_tau, S)
+                          # tau <- update_tau_cpp(tau, logz, X_z, beta_z, beta0,
+                          #                       a_tau, rep(b_tau, S)
                           # a_tau = .5, b_tau = 1 / a_tau
     )
     
@@ -525,6 +533,7 @@ update_Tau <- function(X_z, logz, beta0, beta_z,
   
   Tau_params
 }
+
 
 # BETA --------------------------------------------------------------------
 
@@ -598,7 +607,7 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
     Id_n <- Matrix(diag(1, nrow = n))
     Id_s <- Matrix(diag(1, nrow = S))
     
-    invSigma_tilde <- kronecker(Id_n, solve(Tau))
+    invSigma_tilde <- kronecker(Id_n, Tau)
     
     X_tilde <-  kronecker(X_beta, Id_s)
     
@@ -611,6 +620,151 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
     
     betavec <- Matrix::t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
     betamat <- matrix(betavec, ncol(X_beta), S, byrow = T)
+    
+    #
+    
+    # tXX <- t(X_beta) %*% X_beta
+    # tXl <- t(X_beta) %*% logz
+    # 
+    # prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
+    # # prior_mean[1,] <- rep(0, S)
+    # 
+    # M_term <- tXl + prior_mean
+    # U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
+    # post_U <- solve(U_term)
+    # post_M <- post_U %*% M_term
+    # 
+    # beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
+    
+    if(updatebeta0){
+      beta0 <- as.matrix(betamat[1,])
+      beta_z <- as.matrix(betamat[-1,,drop = F])  
+    } else {
+      beta_z <- as.matrix(betamat)
+    }
+    
+  }
+  
+  list("beta0" = beta0,
+       "beta_z" = beta_z)
+}
+
+update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma, X_z, sigma_beta, updatebeta0){
+  
+  ncov_z <- ncol(X_z)
+  S <- ncol(invSigma_S)
+  n <- nrow(X_z)
+  
+  if(ncov_z > 0 | updatebeta0){
+    
+    if(updatebeta0){
+      X_beta <- cbind(1, X_z)
+    } else {
+      X_beta <- X_z
+    }
+    
+    invSigma_S <- Matrix(invSigma_S)
+    invSigma <- Matrix(invSigma)
+    X_beta <- Matrix(X_beta)
+    Id_n <- Matrix(diag(1, nrow = n))
+    Id_s <- Matrix(diag(1, nrow = S))
+    
+    # invSigma_tilde <- kronecker(invSigma, Tau)
+    
+    # X_tilde <-  kronecker(X_beta, Id_s)
+    X_tilde <-  kronecker(Id_s, X_beta)
+    
+    Lambda_beta <- kronecker(invSigma_S, t(X_beta) %*% invSigma_n %*% X_beta) + diag(1 / sigma_beta^2, S * ncol(X_beta)) 
+    
+    term1 <- as.vector(invSigma_n %*% logz %*% invSigma_S)
+    mu_beta <- Matrix::t(X_tilde) %*% term1 #+ diag(1 / sigma_beta^2, S * ncol(X_beta)) %*% as.vector(beta_mu)
+    # mu_beta <- solve(Lambda_beta) %*% txsigmalogz
+    # mu_beta2 <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
+    
+    chol_Lambda_beta <- t(chol(as.matrix(Lambda_beta)))
+    
+    u <- backsolve(chol_Lambda_beta, mu_beta, upper.tri = F)
+    z <- rnorm(ncol(X_beta) * S)
+    betavec <- backsolve(t(chol_Lambda_beta), z + u, upper.tri = T)
+    
+    # betavec <- Matrix::t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
+    betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
+    
+    #
+    
+    # tXX <- t(X_beta) %*% X_beta
+    # tXl <- t(X_beta) %*% logz
+    # 
+    # prior_mean <- matrix(0, nrow = ncov_z + updatebeta0, ncol = S)
+    # # prior_mean[1,] <- rep(0, S)
+    # 
+    # M_term <- tXl + prior_mean
+    # U_term <- tXX + diag(sigma_beta^2, nrow = (ncov_z + updatebeta0))
+    # post_U <- solve(U_term)
+    # post_M <- post_U %*% M_term
+    # 
+    # beta_bar_beta <- rmtrnorm(post_M, post_U, Tau)
+    
+    if(updatebeta0){
+      beta0 <- as.matrix(betamat[1,])
+      beta_z <- as.matrix(betamat[-1,,drop = F])  
+    } else {
+      beta_z <- as.matrix(betamat)
+    }
+    
+  }
+  
+  list("beta0" = beta0,
+       "beta_z" = beta_z)
+}
+
+update_betaz_CP_fast <- function(beta0, beta_z, logz, 
+                                 inv_chol_Sigma_n, inv_chol_Sigma_S, 
+                                 X_z, sigma_beta, updatebeta0){
+  
+  ncov_z <- ncol(X_z)
+  S <- ncol(invSigma_S)
+  n <- nrow(X_z)
+  
+  if(ncov_z > 0 | updatebeta0){
+    
+    if(updatebeta0){
+      X_beta <- cbind(1, X_z)
+    } else {
+      X_beta <- X_z
+    }
+    
+    U <- inv_chol_Sigma_n
+    V <- inv_chol_Sigma_S
+    
+    Ltilde <- U %*% logz %*% t(V)
+    
+    invSigma_S <- Matrix(invSigma_S)
+    invSigma <- Matrix(invSigma)
+    X_beta <- Matrix(X_beta)
+    Id_n <- Matrix(diag(1, nrow = n))
+    Id_s <- Matrix(diag(1, nrow = S))
+    
+    # invSigma_tilde <- kronecker(invSigma, Tau)
+    
+    # X_tilde <-  kronecker(X_beta, Id_s)
+    X_tilde <-  kronecker(Id_s, X_beta)
+    
+    Lambda_beta <- kronecker(invSigma_S, t(X_beta) %*% invSigma_n %*% X_beta) + diag(1 / sigma_beta^2, S * ncol(X_beta)) 
+    
+    term1 <- as.vector(invSigma_n %*% logz %*% invSigma_S)
+    mu_beta <- Matrix::t(X_tilde) %*% term1 #+ diag(1 / sigma_beta^2, S * ncol(X_beta)) %*% as.vector(beta_mu)
+    # mu_beta <- solve(Lambda_beta) %*% txsigmalogz
+    # mu_beta2 <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
+    
+    chol_Lambda_beta <- t(chol(as.matrix(Lambda_beta)))
+    
+    u <- backsolve(chol_Lambda_beta, mu_beta, upper.tri = F)
+    z <- rnorm(ncol(X_beta) * S)
+    betavec <- backsolve(t(chol_Lambda_beta), z + u, upper.tri = T)
+    
+    # betavec <- Matrix::t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
+    betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
     
     #
     
