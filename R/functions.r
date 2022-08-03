@@ -13,7 +13,7 @@ update_lambda_CP <- function(beta0, beta_z, logz,
                              lambda_prior, sigma_lambda,
                              S_star, emptyTubes){
   
-  df_t  = 3
+  df_t  = 3 * 1
   
   S <- length(mu)
   
