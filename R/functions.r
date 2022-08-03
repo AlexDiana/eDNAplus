@@ -649,7 +649,7 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
        "beta_z" = beta_z)
 }
 
-update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma, X_z, sigma_beta, updatebeta0){
+update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma_n, X_z, sigma_beta, updatebeta0){
   
   ncov_z <- ncol(X_z)
   S <- ncol(invSigma_S)
@@ -664,7 +664,7 @@ update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma, X_z
     }
     
     invSigma_S <- Matrix(invSigma_S)
-    invSigma <- Matrix(invSigma)
+    invSigma_n <- Matrix(invSigma_n)
     X_beta <- Matrix(X_beta)
     Id_n <- Matrix(diag(1, nrow = n))
     Id_s <- Matrix(diag(1, nrow = S))
