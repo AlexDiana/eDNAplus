@@ -99,7 +99,8 @@ runEDNA <- function(data,
                            jointSpecies,
                            spatialCorr,
                            paramsUpdate,
-                           MCMCparams)
+                           MCMCparams,
+                           paramsToSave = paramsToSave)
   
   modelResults
 }
@@ -1248,7 +1249,7 @@ fitModel <- function(data,
                                          sigma_gamma, M_site,
                                          K, S_star, emptyTubes)
         u <- list_u$u
-        lambda <- list_u$lambda
+        # lambda <- list_u$lambda
         
       }
       
@@ -1308,7 +1309,7 @@ fitModel <- function(data,
                                                X_z, sigma_beta, 
                                                !beta0equal0)
         } else {
-          Tau <- Tau_params$Sigma
+          Tau <- Tau_params$Omega
           list_beta_z <- update_betaz_CP_joint(beta0, beta_z, logz, 
                                                Tau, invSigma_n,
                                                X_z, sigma_beta, 

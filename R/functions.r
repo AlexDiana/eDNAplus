@@ -649,7 +649,8 @@ update_betaz_CP_corr <- function(beta0, beta_z, logz, Tau, X_z, sigma_beta, upda
        "beta_z" = beta_z)
 }
 
-update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma_n, X_z, sigma_beta, updatebeta0){
+update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma_n, 
+                                  X_z, sigma_beta, updatebeta0){
   
   ncov_z <- ncol(X_z)
   S <- ncol(invSigma_S)
@@ -674,18 +675,18 @@ update_betaz_CP_joint <- function(beta0, beta_z, logz, invSigma_S, invSigma_n, X
     # X_tilde <-  kronecker(X_beta, Id_s)
     X_tilde <-  kronecker(Id_s, X_beta)
     
-    Lambda_beta <- kronecker(invSigma_S, t(X_beta) %*% invSigma_n %*% X_beta) + diag(1 / sigma_beta^2, S * ncol(X_beta)) 
+    Lambda_beta <- kronecker(invSigma_S, Matrix::t(X_beta) %*% invSigma_n %*% X_beta) + diag(1 / sigma_beta^2, S * ncol(X_beta)) 
     
     term1 <- as.vector(invSigma_n %*% logz %*% invSigma_S)
     mu_beta <- Matrix::t(X_tilde) %*% term1 #+ diag(1 / sigma_beta^2, S * ncol(X_beta)) %*% as.vector(beta_mu)
     # mu_beta <- solve(Lambda_beta) %*% txsigmalogz
     # mu_beta2 <- solve(Lambda_beta) %*% t(X_tilde) %*% invSigma_tilde %*% as.vector(t(logz))
     
-    chol_Lambda_beta <- t(chol(as.matrix(Lambda_beta)))
+    chol_Lambda_beta <- Matrix::t(chol(as.matrix(Lambda_beta)))
     
     u <- backsolve(chol_Lambda_beta, mu_beta, upper.tri = F)
     z <- rnorm(ncol(X_beta) * S)
-    betavec <- backsolve(t(chol_Lambda_beta), z + u, upper.tri = T)
+    betavec <- backsolve(Matrix::t(chol_Lambda_beta), z + u, upper.tri = T)
     
     # betavec <- Matrix::t(mvrnorm(1, as.vector(mu_beta), as.matrix(solve(Lambda_beta))))
     betamat <- matrix(betavec, ncol(X_beta), S, byrow = F)
