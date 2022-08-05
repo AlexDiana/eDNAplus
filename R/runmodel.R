@@ -1220,7 +1220,7 @@ fitModel <- function(data,
                                            sigma_u, M_site, X_w, beta_w, K, S_star, emptyTubes)
         u <- list_uv$u
         v <- list_uv$v
-        lambda <- list_uv$lambda
+        # lambda <- list_uv$lambda
       }
       
       # V ------------------------------------------
