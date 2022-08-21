@@ -116,7 +116,11 @@ cleanData <- function(data){
   spikeInBiomass <- data$spikeInBiomass
   spikeInPresent <- data$spikeInPresent
   
-  if(!all(apply(PCR_table, 2, function(x){all(is.numeric(x))})) | 
+  if(!all(apply(PCR_table, 2, function(x){all(is.numeric(x))}))){
+    stop("Non numeric elements in PCR table")
+  }
+  
+  if(!is.null(PCR_spike) && 
      !all(apply(PCR_spike, 2, function(x){all(is.numeric(x))}))){
     stop("Non numeric elements in PCR table")
   }
@@ -168,7 +172,9 @@ cleanData <- function(data){
              dimnames = list(NULL, NULL, OTUnames))
   for (k in 1:max(K)) {
     y[,k,1:S] <- as.matrix(PCR_table[,1:S + (k-1)*S])
-    y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star])
+    if(S_star > 0){
+      y[,k,S + seq_len(S_star)] <- as.matrix(PCR_spike[,seq_len(S_star) + (k-1)*S_star])  
+    }
   }
   
   if(is.null(X_w0)){
@@ -365,9 +371,16 @@ fitModel <- function(data,
     }
     
     if(spatialCorr){
-      Sigma_n <- K2(X_s, X_s, 1, l_gp)
-      invSigma_n <- solve(Sigma_n)
-      chol_invSigma_n <- solve(t(chol(Sigma_n)))
+      if(ncol(X_s) == 1){
+        Sigma_n <- K2(cbind(X_s, 0), cbind(X_s, 0), 1, l_gp)
+        invSigma_n <- solve(Sigma_n)
+        chol_invSigma_n <- solve(t(chol(Sigma_n)))
+      } else {
+        Sigma_n <- K2(X_s, X_s, 1, l_gp)
+        invSigma_n <- solve(Sigma_n)
+        chol_invSigma_n <- solve(t(chol(Sigma_n)))  
+      }
+      
     } else {
       chol_invSigma_n <- NULL
     }
@@ -1170,7 +1183,7 @@ fitModel <- function(data,
         v <- list_lambda$v
         logz <- list_lambda$logz
         
-        if(min(lambda) < -100) browser()
+        if(min(lambda) < -25) browser()
         
       }
       
@@ -1273,10 +1286,11 @@ fitModel <- function(data,
                                        Tau, delta, gamma, sigma,
                                        M_site, S_star, emptyTubes) 
         } else if(!jointSpecies & spatialCorr){
-          Tau <- diag(1, nrow = S)   
+          tau <- Tau_params$tau
+          Tau <- diag(as.vector(tau), nrow = S) 
           logz <- update_logz_joint_cpp(logz, beta0, X_z, beta_z, mu,
                                        v, lambda, beta_theta, X_w, beta_w,
-                                       Sigma_n, invSigma_n, Tau, delta, gamma, 
+                                       Sigma_n, Tau, delta, gamma, 
                                        sigma, M_site, S_star, emptyTubes) 
         } else {
           Tau <- Tau_params$Sigma 
@@ -1303,7 +1317,7 @@ fitModel <- function(data,
           list_beta_z <- update_betaz_CP_corr(beta0, beta_z, logz, Tau, X_z, sigma_beta, !beta0equal0)
         } else if(!jointSpecies & spatialCorr){
           tau <- Tau_params$tau
-          Tau <- diag(tau, nrow = S)
+          Tau <- diag(as.vector(tau), nrow = S)
           list_beta_z <- update_betaz_CP_joint(beta0, beta_z, logz, 
                                                Tau, invSigma_n,
                                                X_z, sigma_beta, 
