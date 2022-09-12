@@ -1154,7 +1154,7 @@ fitModel <- function(data,
       
       if(updateLambda_CP){
         
-        print("Update lambda")
+        # print("Update lambda")
         
         if(beta0equal0){
           if(jointSpecies){
@@ -1207,7 +1207,7 @@ fitModel <- function(data,
       
       if(updateMu){
         
-        print("Update mu")
+        # print("Update mu")
         
         mu <- update_mu_cpp(mu, lambda, delta, gamma, sigma, sigma_gamma, beta0,
                             beta_z, logz, v, beta_theta, M_site, sigma_mu, S_star, emptyTubes)
@@ -1219,7 +1219,7 @@ fitModel <- function(data,
       
       if(updateLambdaijk){
         
-        print("Update lambdaijk")
+        # print("Update lambdaijk")
         
         lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K,
                                        S_star, emptyTubes)
@@ -1254,7 +1254,7 @@ fitModel <- function(data,
       # U --------------------------------------
       
       if(updateU){
-        print("Update u")
+        # print("Update u")
         
         list_u <- update_u_poisgamma_cpp(v, u, lambda, beta0, beta_z, logz,
                                          mu, lambda_ijk, r_nb, X_w, beta_w, c_imk,
@@ -1270,7 +1270,7 @@ fitModel <- function(data,
       
       if(updateL){
         
-        print("update l")
+        # print("update l")
         
         if(!jointSpecies & !spatialCorr){
           
@@ -1306,7 +1306,7 @@ fitModel <- function(data,
       
       if(updateBeta_z){
         
-        print("Update beta z")
+        # print("Update beta z")
         
         if(!jointSpecies & !spatialCorr){
           tau <- Tau_params$tau
@@ -1346,7 +1346,7 @@ fitModel <- function(data,
       # BETA_W ---------
       
       if(updateBeta_w){
-        print("Update betaw")
+        # print("Update betaw")
         if(ncov_w > 0){
           beta_w <- update_betaw_cpp(beta_w, v, delta, logz, X_w, sigma, sigma_beta, M_site)
         }
@@ -1355,7 +1355,7 @@ fitModel <- function(data,
       # TAU ----------------------------------------------------------
       
       if(updateTau){
-        print("Update Tau")
+        # print("Update Tau")
         Tau_params <- update_Tau(X_z, logz, beta0, beta_z,
                                  Tau_params, Tau_Priors,
                                  jointSpecies, spatialCorr,
@@ -1421,7 +1421,7 @@ fitModel <- function(data,
       # R - NB ---------------------
       
       if(updateR){
-        print("Update r")
+        # print("Update r")
         
         r_nb <- update_r_nb_cpp(r_nb, lambda, u,
                                 v, y, delta, gamma, c_imk, M_site, K,
@@ -1434,7 +1434,7 @@ fitModel <- function(data,
       # DELTA/C/D --------------------------------------------------------
       
       if(updateDeltaGammaC){
-        print("Update delta")
+        # print("Update delta")
         v_pres <- (delta == 1) | (gamma == 1)
         list_deltagammac <- update_delta_c_d_rjmcmc(v_pres, y, v, lambda, r_nb,
                                                     M_site, K, 
