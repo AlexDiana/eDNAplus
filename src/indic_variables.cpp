@@ -1231,6 +1231,7 @@ List update_delta_c_d_rjmcmc(arma::mat v_pres,
                              double mu_tilde, 
                              double n_tilde,
                              arma::mat u,
+                             arma::mat offsets,
                              arma::mat logz, 
                              arma::mat X_w,
                              arma::mat beta_w,
@@ -1271,6 +1272,9 @@ List update_delta_c_d_rjmcmc(arma::mat v_pres,
         for(int k = 0; k < currentK; k++){
           y_counts[k] = y(index_m, k, j);
           u_im[k] = u(index_m, k);
+          if(j < S){
+            u_im[k] += offsets(index_m, k);
+          }
           if(y_counts[k] > 2){
             allLessThanTwo = false;
           }
@@ -1769,289 +1773,529 @@ arma::vec convertIndexToDeltaGammaC(int index,
   return(indexes);
 }
 
-// double computeProb(int delta, 
-//                    int gamma,
-//                    arma::vec c_imk,
-//                    arma::vec y_counts,
-//                    double n0, 
-//                    double p0,
-//                    double pi0,
-//                    double n_tilde, double p_tilde,
-//                    double lambda_j, // double lambdatilde_j,
-//                    double theta11,
-//                    double theta10,
-//                    int currentK,
-//                    double p11,
-//                    double p10,
-//                    double r_nb,
-//                    double v_star,
-//                    arma::vec u_im,
-//                    double prior_v,
-//                    double sigma_j,
-//                    double mu,
-//                    double sigma_gamma){
-//   
-//   double prob;
-//   
-//   if(delta == 0 & gamma == 0){
-//     
-//     // arma::vec c_imk_new = 2 * DecToBin_cpp(l, currentK);
-//     arma::vec c_imk_new = 2 * c_imk;//DecToBin_cpp(l, currentK);
-//     
-//     double log_prob_y_new = compute_logprob_y_delta0_cpp(y_counts, 
-//                                                          c_imk_new, 
-//                                                          currentK, 
-//                                                          n0, p0, pi0,
-//                                                          n_tilde, p_tilde, 
-//                                                          lambda_j);
-//                                                          // lambdatilde_j
-//     
-//     double prob_delta_new = log(1 - theta11) + log(1 - theta10);
-//     double prob_delta_current = log(1 - theta11) + log(1 - theta10);
-//     
-//     double prob_d_new = 0;
-//     for(int l3 = 0; l3 < currentK; l3++){
-//       prob_d_new += R::dbinom(c_imk_new[l3]/ 2.0, 1, p10, 1);
-//     }
-//     
-//     prob = log_prob_y_new + prob_delta_new + prob_d_new;
-//     
-//   } else if(delta == 1 & gamma == 0){
-//     
-//     double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts, 
-//                                                          c_imk, 
-//                                                          currentK, n0, p0, pi0, 
-//                                                          r_nb,
-//                                                          v_star, 
-//                                                          n_tilde, p_tilde, 
-//                                                          // lambdatilde_j, 
-//                                                          lambda_j,
-//                                                          u_im);
-//     
-//     double prob_delta = log(theta11);
-//     
-//     double log_prior_v = R::dnorm(v_star, 
-//                                   prior_v,
-//                                   sigma_j, 1);
-//     
-//     double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
-//     for(int k = 0; k < currentK; k++){
-//       prob_c += R::dbinom(c_imk[k], 1, p11, 1);
-//     }
-//     
-//     prob = log_prob_y + prob_delta + log_prior_v + prob_c;
-//     
-//   } else {
-//     
-//     double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts, 
-//                                                          c_imk, 
-//                                                          currentK, n0, p0, pi0,
-//                                                          r_nb,
-//                                                          v_star, 
-//                                                          n_tilde, p_tilde, 
-//                                                          // lambdatilde_j, 
-//                                                          lambda_j,
-//                                                          u_im);
-//     
-//     double log_prior_v = R::dnorm(v_star, 
-//                                   mu,
-//                                   sigma_gamma, 1);
-//     
-//     double prob_delta = log(1 - theta11) + log(theta10);
-//     
-//     double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
-//     for(int k = 0; k < currentK; k++){
-//       prob_c += R::dbinom(c_imk[k], 1, p11, 1);
-//     }
-//     
-//     prob = log_prob_y + prob_delta + log_prior_v + 
-//       prob_c; 
-//   }
-//   
-//   return(prob);
-// }
-// 
-// // [[Rcpp::export]]
-// List update_delta_c_d_proposals(arma::cube c_imk,
-//                                 arma::mat delta,
-//                                 arma::mat gamma,
-//                                 arma::cube A,
-//                                 arma::cube y, 
-//                                 arma::mat v, 
-//                                 arma::vec lambda,
-//                                 arma::vec r_nb,
-//                                 arma::vec M_site, arma::vec K, // arma::vec lambdatilde, 
-//                                 double mu0, double n0, double pi0,
-//                                 double mu_tilde, double n_tilde,
-//                                 arma::mat u,
-//                                 arma::mat logz, 
-//                                 arma::vec r,
-//                                 arma::vec alpha,
-//                                 arma::vec sigma,
-//                                 arma::vec mu,
-//                                 double sigma_gamma,
-//                                 double v_sd,
-//                                 arma::vec p11, 
-//                                 arma::vec p10, 
-//                                 arma::mat theta11, 
-//                                 arma::vec theta10,
-//                                 arma::vec emptySites){
-//   
-//   int S = y.n_slices;
-//   int n = M_site.size();
-//   
-//   int index_m = 0;
-//   
-//   // arma::cube c_imk = arma::cube(v.n_rows, max(K), S);
-//   // arma::mat delta = arma::mat(v.n_rows, S);
-//   // arma::mat gamma = arma::mat(v.n_rows, S);
-//   
-//   double p0 = n0 / (n0 + mu0);
-//   double p_tilde = n_tilde / (n_tilde + mu_tilde);
-//   
-//   for(int i = 0; i < n; i++){
-//     for(int m = 0; m < M_site[i]; m++){
-//       for(int j = 0; j < S; j++){
-//         
-//         int currentK = K[index_m];
-//         
-//         arma::vec y_counts = arma::zeros(currentK);
-//         arma::vec u_im = arma::zeros(currentK);
-//         for(int k = 0; k < currentK; k++){
-//           y_counts[k] = y(index_m, k, j);
-//           u_im[k] = u(index_m, k);
-//         }
-//         
-//         // current value
-//         arma::vec c_currents = arma::zeros(currentK);
-//         for(int k = 0; k < currentK; k++){
-//           c_currents[k] = c_imk(index_m, k, j);
-//         }
-//         int delta_current = delta(index_m, j);
-//         int gamma_current = gamma(index_m, j);
-//         
-//         int currentIndex = convertDeltaIndexes(delta_current,
-//                                                gamma_current,
-//                                                c_currents,
-//                                                currentK);
-//         
-//         // propose new value 
-//         arma::vec proposalProbs = arma::zeros(3 * pow(2, currentK));
-//         for(int l = 0; l < proposalProbs.size(); l++){
-//           
-//           proposalProbs[l] = A(index_m, j, l);
-//           
-//         }
-//         
-//         NumericVector toSample(proposalProbs.size());
-//         for(int l5 = 0; l5 < proposalProbs.size(); l5++) toSample(l5) = l5;
-//         int newIndex = 0;//RcppArmadillo::sample(toSample, 1, 1, proposalProbs)[0];
-//         
-//         arma::vec newIndexes = convertIndexToDeltaGammaC(newIndex, currentK);
-//         int delta_new = newIndexes[0];
-//         int gamma_new = newIndexes[1];
-//         arma::vec c_new = arma::zeros(currentK);
-//         for(int k = 0; k < currentK; k++){
-//           c_new[k] = newIndexes[2 + k];
-//         }
-//         
-//         if(newIndex != currentIndex){
-//           
-//           double v_star;
-//           
-//           if(delta_current == 1 | gamma_current == 1){ // value existing
-//             
-//             v_star = v(index_m, j);
-//             
-//           } else {
-//             
-//             double mean_v = log(mean(y_counts / exp(lambda[j] + u_im)));
-//             if(mean_v < -10){
-//               mean_v = - 10;
-//             }
-//             v_star = R::rnorm(mean_v, v_sd);
-//             
-//           }
-//           
-//           double log_prob_current = computeProb(delta_current, 
-//                                                 gamma_current,
-//                                                 c_currents,
-//                                                 y_counts,
-//                                                 n0, 
-//                                                 p0,
-//                                                 pi0,
-//                                                 lambda[j],
-//                                                       // lambdatilde[j],
-//                                                                  theta11(index_m,j),
-//                                                                  theta10[j],
-//                                                                         currentK,
-//                                                                         p11[j],
-//                                                                            p10[j],
-//                                                                               n_tilde, p_tilde, 
-//                                                                               r_nb[j],
-//                                                                                   v_star,
-//                                                                                   u_im,
-//                                                                                   logz(i, j) + r(index_m) * alpha[j],
-//                                                                                                                  sigma[j],
-//                                                                                                                       mu[j],
-//                                                                                                                         sigma_gamma);
-//           
-//           double log_prob_new = computeProb(delta_new, 
-//                                             gamma_new,
-//                                             c_new,
-//                                             y_counts,
-//                                             n0, 
-//                                             p0,
-//                                             pi0,
-//                                             n_tilde, p_tilde, 
-//                                             lambda[j],
-//                                                   // lambdatilde[j],
-//                                                              theta11(index_m,j),
-//                                                              theta10[j],
-//                                                                     currentK,
-//                                                                     p11[j],
-//                                                                        p10[j],
-//                                                                           r_nb[j],
-//                                                                               v_star,
-//                                                                               u_im,
-//                                                                               logz(i, j) + r(index_m) * alpha[j],
-//                                                                                                              sigma[j],
-//                                                                                                                   mu[j],
-//                                                                                                                     sigma_gamma);
-//           
-//           double prop_current_to_new = A(index_m, j, currentIndex);
-//           double prop_new_to_current = A(index_m, j, newIndex);
-//           
-//           double proposal_ratio = prop_current_to_new / prop_new_to_current;
-//           
-//           double log_posterior_ratio =  log_prob_new - log_prob_current;
-//           
-//           if(R::runif(0, 1) < exp(log_posterior_ratio) * proposal_ratio){
-//             
-//             delta(index_m, j) = delta_new;
-//             gamma(index_m, j) = gamma_new;
-//             for(int k = 0; k < currentK; k++){
-//               c_imk(index_m, k, j) = c_new[k];
-//             }
-//             
-//             v(index_m, j) = v_star;
-//             
-//           }
-//           
-//           
-//         }
-//         
-//       }
-//       
-//       index_m += 1;
-//     }
-//   }
-//   
-//   return List::create(_["delta"] = delta,
-//                       _["c_imk"] = c_imk,
-//                       _["gamma"] = gamma,
-//                       _["v"] = v);
-// }
+double computeProb_old(int delta,
+                       int gamma,
+                       arma::vec c_imk,
+                       arma::vec y_counts,
+                       double n0,
+                       double p0,
+                       double pi0,
+                       double n_tilde, double p_tilde,
+                       double lambda_j, // double lambdatilde_j,
+                       double theta11,
+                       double theta10,
+                       int currentK,
+                       double p11,
+                       double p10,
+                       double r_nb,
+                       double v_star,
+                       arma::vec u_im,
+                       double prior_v,
+                       double sigma_j,
+                       double mu,
+                       double sigma_gamma,
+                       int isSpikeIn,
+                       int isSpiked){
+  
+  double prob;
+  
+  if(delta == 0 & gamma == 0){
+    
+    // arma::vec c_imk_new = 2 * DecToBin_cpp(l, currentK);
+    arma::vec c_imk_new = 2 * c_imk;//DecToBin_cpp(l, currentK);
+    
+    double log_prob_y_new = compute_logprob_y_delta0_cpp(y_counts,
+                                                         c_imk_new,
+                                                         currentK,
+                                                         n0, p0, pi0,
+                                                         n_tilde, p_tilde,
+                                                         lambda_j);
+    // lambdatilde_j
+    
+    double prob_delta_new = log(1 - theta11) + log(1 - theta10);
+    double prob_delta_current = log(1 - theta11) + log(1 - theta10);
+    
+    double prob_d_new = 0;
+    for(int l3 = 0; l3 < currentK; l3++){
+      prob_d_new += R::dbinom(c_imk_new[l3]/ 2.0, 1, p10, 1);
+    }
+    
+    prob = log_prob_y_new + prob_delta_new + prob_d_new;
+    
+  } else if(delta == 1 & gamma == 0){
+    
+    double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                         c_imk,
+                                                         currentK, n0, p0, pi0,
+                                                         r_nb,
+                                                         v_star,
+                                                         n_tilde, p_tilde,
+                                                         // lambdatilde_j,
+                                                         lambda_j,
+                                                         u_im);
+    
+    double prob_delta = log(theta11);
+    
+    double log_prior_v = R::dnorm(v_star,
+                                  prior_v,
+                                  sigma_j, 1);
+    
+    double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
+    for(int k = 0; k < currentK; k++){
+      prob_c += R::dbinom(c_imk[k], 1, p11, 1);
+    }
+    
+    prob = log_prob_y + prob_delta + log_prior_v + prob_c;
+    
+  } else {
+    
+    double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                         c_imk,
+                                                         currentK, n0, p0, pi0,
+                                                         r_nb,
+                                                         v_star,
+                                                         n_tilde, p_tilde,
+                                                         // lambdatilde_j,
+                                                         lambda_j,
+                                                         u_im);
+    
+    double log_prior_v = R::dnorm(v_star,
+                                  mu,
+                                  sigma_gamma, 1);
+    
+    double prob_delta = log(1 - theta11) + log(theta10);
+    
+    double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
+    for(int k = 0; k < currentK; k++){
+      prob_c += R::dbinom(c_imk[k], 1, p11, 1);
+    }
+    
+    prob = log_prob_y + prob_delta + log_prior_v +
+      prob_c;
+  }
+  
+  return(prob);
+}
+
+double computeProb(int delta,
+                   int gamma,
+                   arma::vec c_imk,
+                   arma::vec y_counts,
+                   double n0,
+                   double p0,
+                   double pi0,
+                   double n_tilde, double p_tilde,
+                   double lambda_j, // double lambdatilde_j,
+                   double theta11,
+                   double theta10,
+                   int currentK,
+                   double p11,
+                   double p10,
+                   double r_nb,
+                   double v_star,
+                   arma::vec u_im,
+                   double prior_v,
+                   double sigma_j,
+                   double mu,
+                   double sigma_gamma,
+                   double mean_v,
+                   double v_sd,
+                   int isSpikeIn,
+                   int notSpiked){
+  
+  double prob;
+  
+  if(!isSpikeIn){
+    
+    if(delta == 0 & gamma == 0){
+      
+      // arma::vec c_imk_new = 2 * DecToBin_cpp(l, currentK);
+      arma::vec c_imk_new = 2 * c_imk;//DecToBin_cpp(l, currentK);
+      
+      double log_prob_y_new = compute_logprob_y_delta0_cpp(y_counts,
+                                                           c_imk_new,
+                                                           currentK,
+                                                           n0, p0, pi0,
+                                                           n_tilde, p_tilde,
+                                                           lambda_j);
+      // lambdatilde_j
+      
+      double prob_delta = log(1 - theta11) + log(1 - theta10);
+      
+      double prob_d_new = 0;
+      for(int l3 = 0; l3 < currentK; l3++){
+        prob_d_new += R::dbinom(c_imk_new[l3]/ 2.0, 1, p10, 1);
+      }
+      
+      prob = log_prob_y_new + prob_delta + prob_d_new;
+      
+    } else if(delta == 1 & gamma == 0){
+      
+      double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                           c_imk,
+                                                           currentK, n0, p0, pi0,
+                                                           r_nb,
+                                                           v_star,
+                                                           n_tilde, p_tilde,
+                                                           // lambdatilde_j,
+                                                           lambda_j,
+                                                           u_im);
+      
+      double prob_delta = log(theta11);
+      
+      double log_prior_v = R::dnorm(v_star,
+                                    prior_v,
+                                    sigma_j, 1);
+      
+      double log_proposal_v = R::dnorm(v_star, mean_v, v_sd, 1);
+      
+      double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
+      for(int k = 0; k < currentK; k++){
+        prob_c += R::dbinom(c_imk[k], 1, p11, 1);
+      }
+      
+      prob = log_prob_y + prob_delta + log_prior_v - log_proposal_v + prob_c;
+      
+    } else {
+      
+      double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                           c_imk,
+                                                           currentK, n0, p0, pi0,
+                                                           r_nb,
+                                                           v_star,
+                                                           n_tilde, p_tilde,
+                                                           // lambdatilde_j,
+                                                           lambda_j,
+                                                           u_im);
+      
+      double log_prior_v = R::dnorm(v_star,
+                                    mu,
+                                    sigma_gamma, 1);
+      
+      double log_proposal_v = R::dnorm(v_star, mean_v, v_sd, 1);
+      
+      double prob_delta = log(1 - theta11) + log(theta10);
+      
+      double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
+      for(int k = 0; k < currentK; k++){
+        prob_c += R::dbinom(c_imk[k], 1, p11, 1);
+      }
+      
+      prob = log_prob_y + prob_delta + log_prior_v -
+        log_proposal_v + prob_c;
+    }
+    
+  } else if(notSpiked){
+    
+    if(delta == 0 & gamma == 0){
+      
+      // arma::vec c_imk_new = 2 * DecToBin_cpp(l, currentK);
+      arma::vec c_imk_new = 2 * c_imk;//DecToBin_cpp(l, currentK);
+      
+      double log_prob_y_new = compute_logprob_y_delta0_cpp(y_counts,
+                                                           c_imk_new,
+                                                           currentK,
+                                                           n0, p0, pi0,
+                                                           n_tilde, p_tilde,
+                                                           lambda_j);
+      // lambdatilde_j
+      
+      double prob_delta = log(1 - theta11) + log(1 - theta10);
+      
+      double prob_d_new = 0;
+      for(int l3 = 0; l3 < currentK; l3++){
+        prob_d_new += R::dbinom(c_imk_new[l3]/ 2.0, 1, p10, 1);
+      }
+      
+      prob = log_prob_y_new + prob_delta + prob_d_new;
+      
+    } else if(delta == 1 & gamma == 0){
+      
+      prob = -1000;
+      
+    } else {
+      
+      prob = -1000;
+    }
+    
+  } else {
+    
+    if(delta == 0 & gamma == 0){
+      
+      prob = -1000;
+      
+    } else if(delta == 1 & gamma == 0){
+      
+      double log_prob_y = compute_logprob_y_delta1_rnb_cpp(y_counts,
+                                                           c_imk,
+                                                           currentK, n0, p0, pi0,
+                                                           r_nb,
+                                                           v_star,
+                                                           n_tilde, p_tilde,
+                                                           // lambdatilde_j,
+                                                           lambda_j,
+                                                           u_im);
+      
+      double prob_delta = log(theta11);
+      
+      double log_prior_v = R::dnorm(v_star,
+                                    prior_v,
+                                    sigma_j, 1);
+      
+      double log_proposal_v = R::dnorm(v_star, mean_v, v_sd, 1);
+      
+      double prob_c = 0;// <- sum(dbinom(c_imk_current, 1, p_11[i], log = T))
+      for(int k = 0; k < currentK; k++){
+        prob_c += R::dbinom(c_imk[k], 1, p11, 1);
+      }
+      
+      prob = log_prob_y + prob_delta + log_prior_v - log_proposal_v + prob_c;
+      
+    } else {
+      
+      prob = -1000;
+    }
+    
+  }
+  
+  return(prob);
+}
+
+// [[Rcpp::export]]
+List update_delta_c_d_proposals(arma::mat v_pres,
+                                arma::cube c_imk,
+                                arma::mat delta,
+                                arma::mat gamma,
+                                arma::cube A,
+                                arma::cube y,
+                                arma::mat v,
+                                arma::vec lambda,
+                                arma::vec r_nb,
+                                arma::vec M_site, arma::vec K, // arma::vec lambdatilde,
+                                double mu0, double n0, double pi0,
+                                double mu_tilde, double n_tilde,
+                                arma::mat u,
+                                arma::mat logz,
+                                arma::mat X_w,
+                                arma::mat beta_w,
+                                arma::vec sigma,
+                                arma::vec mu,
+                                double sigma_gamma,
+                                double v_sd,
+                                arma::vec p11,
+                                arma::vec p10,
+                                arma::mat theta11,
+                                arma::vec theta10,
+                                arma::mat spikedSample,
+                                int emptyTubes,
+                                int S_star){
+  
+  int S = y.n_slices;
+  int n = M_site.size();
+  
+  int index_m = 0;
+  
+  arma::mat Xw_beta = X_w * beta_w;
+  
+  // arma::cube c_imk = arma::cube(v.n_rows, max(K), S);
+  // arma::mat delta = arma::mat(v.n_rows, S);
+  // arma::mat gamma = arma::mat(v.n_rows, S);
+  
+  double p0 = n0 / (n0 + mu0);
+  double p_tilde = n_tilde / (n_tilde + mu_tilde);
+  
+  for(int i = 0; i < n; i++){
+    for(int m = 0; m < M_site[i]; m++){
+      
+      int currentK = K[index_m];
+      
+      for(int j = 0; j < S; j++){
+        
+        // propose new value
+        arma::vec proposalProbs = arma::zeros(3 * pow(2, currentK));
+        for(int l = 0; l < proposalProbs.size(); l++){
+          
+          proposalProbs[l] = A(index_m, j, l);
+          
+        }
+        
+        NumericVector toSample(proposalProbs.size());
+        for(int l5 = 0; l5 < proposalProbs.size(); l5++) toSample(l5) = l5;
+        int newIndex = 0;//RcppArmadillo::sample(toSample, 1, 1, proposalProbs)[0];
+        
+        arma::vec newIndexes = convertIndexToDeltaGammaC(newIndex, currentK);
+        int delta_new = newIndexes[0];
+        int gamma_new = newIndexes[1];
+        arma::vec c_new = arma::zeros(currentK);
+        for(int k = 0; k < currentK; k++){
+          c_new[k] = newIndexes[2 + k];
+        }
+        
+        // current value
+        arma::vec c_currents = arma::zeros(currentK);
+        for(int k = 0; k < currentK; k++){
+          c_currents[k] = c_imk(index_m, k, j);
+        }
+        int delta_current = delta(index_m, j);
+        int gamma_current = gamma(index_m, j);
+        
+        int currentIndex = convertDeltaIndexes(delta_current,
+                                               gamma_current,
+                                               c_currents,
+                                               currentK);
+        
+        if(newIndex != currentIndex){
+          
+          
+          
+          arma::vec y_counts = arma::zeros(currentK);
+          arma::vec u_im = arma::zeros(currentK);
+          for(int k = 0; k < currentK; k++){
+            y_counts[k] = y(index_m, k, j);
+            u_im[k] = u(index_m, k);
+          }
+          
+          double v_star;
+          
+          double mean_v = log(mean(y_counts / exp(lambda[j] + u_im)));
+          
+          if(v_pres(index_m, j) == 1){ // value existing
+            
+            v_star = v(index_m, j);
+            
+          } else {
+            
+            if(mean_v < -10){
+              mean_v = - 10;
+            }
+            v_star = R::rnorm(mean_v, v_sd);
+            
+          }
+          
+          double log_prob_current = computeProb(delta_current,
+                                                gamma_current,
+                                                c_currents,
+                                                y_counts,
+                                                n0,
+                                                p0,
+                                                pi0,
+                                                n_tilde, p_tilde,
+                                                lambda[j],
+                                                      theta11(index_m,j),
+                                                      theta10[j],
+                                                             currentK,
+                                                             p11[j],
+                                                                p10[j],
+                                                                   r_nb[j],
+                                                                       v_star,
+                                                                       u_im,
+                                                                       logz(i, j) + Xw_beta(index_m, j),
+                                                                       sigma[j],
+                                                                            mu[j],
+                                                                              sigma_gamma,
+                                                                              mean_v,
+                                                                              v_sd,
+                                                                              j < S,
+                                                                                  spikedSample(index_m, j - S) == 0);
+          
+          double log_prob_new = computeProb(delta_new,
+                                            gamma_new,
+                                            c_new,
+                                            y_counts,
+                                            n0,
+                                            p0,
+                                            pi0,
+                                            n_tilde, p_tilde,
+                                            lambda[j],
+                                                  theta11(index_m,j),
+                                                  theta10[j],
+                                                         currentK,
+                                                         p11[j],
+                                                            p10[j],
+                                                               r_nb[j],
+                                                                   v_star,
+                                                                   u_im,
+                                                                   logz(i, j) + Xw_beta(index_m, j),
+                                                                   sigma[j],
+                                                                        mu[j],
+                                                                          sigma_gamma,
+                                                                          mean_v,
+                                                                          v_sd,
+                                                                          j < S,
+                                                                              spikedSample(index_m, j - S) == 0);
+          
+          double prop_current_to_new = A(index_m, j, currentIndex);
+          double prop_new_to_current = A(index_m, j, newIndex);
+          
+          double proposal_ratio = prop_current_to_new / prop_new_to_current;
+          
+          double log_posterior_ratio =  log_prob_new - log_prob_current;
+          
+          if(R::runif(0, 1) < exp(log_posterior_ratio) * proposal_ratio){
+            
+            delta(index_m, j) = delta_new;
+            gamma(index_m, j) = gamma_new;
+            for(int k = 0; k < currentK; k++){
+              c_imk(index_m, k, j) = c_new[k];
+            }
+            
+            v(index_m, j) = v_star;
+            
+          }
+          
+          
+        }
+        
+      }
+      
+      index_m += 1;
+    }
+  }
+  
+  return List::create(_["delta"] = delta,
+                      _["c_imk"] = c_imk,
+                      _["gamma"] = gamma,
+                      _["v"] = v);
+}
+
+/// UPDATE PROPOSAL PROBABILITIES
+
+void updateProposal(arma::cube& A_proposal,
+           arma::mat& delta,
+           arma::mat& gamma,
+           arma::cube& c_imk,
+           arma::vec K){
+  
+  for(int l = 0; l < delta.n_rows; l++){
+    
+    for(int j = 0; j < delta.n_cols; j++){
+      
+      for(int k = 0; k < c_imk.n_cols; k++ ){
+        
+        int currentK = K[l];
+        
+        // current value
+        arma::vec c_currents = arma::zeros(currentK);
+        for(int k = 0; k < currentK; k++){
+          c_currents[k] = c_imk(l, k, j);
+        }
+        int delta_current = delta(l, j);
+        int gamma_current = gamma(l, j);
+  
+        int currentIndex = convertDeltaIndexes(delta_current,
+                                               gamma_current,
+                                               c_currents,
+                                               currentK);
+        
+        A_proposal(l, j, currentIndex) += 1;
+        
+      }
+      
+    }
+    
+  }
+  
+}
 
 /// PROBABILITIES
 

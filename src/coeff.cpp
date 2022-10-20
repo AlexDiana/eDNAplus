@@ -4097,6 +4097,7 @@ double logpost_u(double u,
 // [[Rcpp::export]]
 List update_u_poisgamma_cpp(arma::mat v,
                             arma::mat u,
+                            arma::mat offsets,
                             arma::vec lambda,
                             arma::vec beta0,
                             arma::mat beta_z,
@@ -4163,6 +4164,10 @@ List update_u_poisgamma_cpp(arma::mat v,
             lambdas[l2] = lambda_ijk(l, k, j);
             v_present[l2] = v_bar(l, j);
             r_present[l2] = r_nb[j];
+            
+            if(j < S){
+              v_present[l2] += offsets(l, k);
+            }
             
             a += lambda_ijk(l, k, j) * r_nb[j] / exp(v_bar(l, j));
             
@@ -4508,7 +4513,9 @@ arma::mat update_v_poisgamma_cpp(arma::mat v,
                                  arma::vec lambda,
                                  arma::mat X_z,
                                  arma::mat beta_theta,
-                                 arma::mat u, arma::mat beta_z,
+                                 arma::mat u, 
+                                 arma::mat offsets, 
+                                 arma::mat beta_z,
                                  arma::vec beta0,
                                  arma::vec r_nb,
                                  arma::vec mu, 
@@ -4563,7 +4570,7 @@ arma::mat update_v_poisgamma_cpp(arma::mat v,
             if(c_imk(l, k, j) == 1){
               
               lambdas[l2] = lambda_ijk(l, k, j);
-              u_present[l2] = u(l,k);
+              u_present[l2] = u(l,k) + offsets(l, k);
               
               a += lambda_ijk(l, k, j) * rnb_current / exp(u(l, k));
               
@@ -4890,6 +4897,7 @@ arma::vec update_coeff_rnb(double x_current,
 // [[Rcpp::export]]
 List update_uv_poisgamma_cpp(arma::mat u,
                              arma::mat v,
+                             arma::mat offsets,
                              arma::mat logz,
                              arma::vec lambda,
                              arma::mat X_z,
@@ -5038,7 +5046,7 @@ List update_uv_poisgamma_cpp(arma::mat u,
         for (int j = 0; j < S; j++) {
           if(c_imk(l, k, j) == 1){
             r_all[l2] = r_nb[j];
-            x_present[l2] = vtilde(l, j) + utilde(l, k);
+            x_present[l2] = vtilde(l, j) + utilde(l, k) + offsets(l, k);
             lambdas[l2] = lambda_ijk(l, k, j);
             a_1 += ( - r_nb[j] * exp(- x_present[l2]) * lambdas[l2]);
             a_2 += r_nb[j];
@@ -5510,6 +5518,7 @@ double optim_r_rcpp(double& init_val,
 arma::vec update_r_nb_cpp(arma::vec r_nb,
                           arma::vec lambda,  
                           arma::mat u, 
+                          arma::mat offsets, 
                           arma::mat v,
                           arma::cube &y,
                           arma::mat delta,
@@ -5520,7 +5529,9 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
                           double mean_r,
                           double sd_r,
                           bool optimStep,
-                          double sd_r_proposal){
+                          double sd_r_proposal,
+                          int S,
+                          int S_star){
   
   // List list_CP_cpp = convertSPtoCP_cpp(lambda, beta_z, beta0, mu, logz, v, delta, 
   //                                      gamma, beta_theta, M_site);
@@ -5531,9 +5542,8 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
   // arma::mat beta_theta0_bar = list_CP_cpp["beta_theta0_bar"];
   
   int n = M_site.size();
-  int S = r_nb.size();
   
-  for (int j = 0; j < S; j++) {
+  for (int j = 0; j < (S + S_star); j++) {
     
     double sum_v = 0;
     
@@ -5547,7 +5557,12 @@ arma::vec update_r_nb_cpp(arma::vec r_nb,
         
         if(c_imk(l,k,j) == 1){
           y_present0[l2] = y(l,k,j);
-          mean_uv0[l2] = exp(lambda[j] + v(l, j) + u(l, k));
+         
+          if(j < S){
+            mean_uv0[l2] = exp(lambda[j] + v(l, j) + u(l, k) + offsets(l, k));
+          } else {
+            mean_uv0[l2] = exp(lambda[j] + v(l, j) + u(l, k));
+          }
           l2 += 1;
         } 
         
@@ -5781,6 +5796,7 @@ arma::cube update_lambdaijk(arma::vec lambda,
                             arma::cube lambda_ijk,
                             arma::mat v, 
                             arma::mat u,
+                            arma::mat offsets,
                             arma::vec r_nb,
                             arma::cube c_imk,
                             arma::vec M_site,
@@ -5801,8 +5817,15 @@ arma::cube update_lambdaijk(arma::vec lambda,
         for(int j = 0; j < (S + S_star); j++){
           if(c_imk(l,k,j) == 1){
             
-            double mean_lambdaijk = exp(lambda[j] + v(l, j) +
-                                        u(l, k));
+            
+            double mean_lambdaijk;
+            if(j < S){
+              mean_lambdaijk = exp(lambda[j] + v(l, j) +
+                u(l, k) + offsets(l, k)); 
+            } else {
+              mean_lambdaijk = exp(lambda[j] + v(l, j) +
+                u(l, k));
+            }
             
             lambda_ijk2(l, k, j) = 
               R::rgamma(r_nb[j] + y(l, k, j), 
@@ -5823,8 +5846,16 @@ arma::cube update_lambdaijk(arma::vec lambda,
       for(int j = 0; j < (S + S_star); j++){
         if(c_imk(l + m,k,j) == 1){
           
-          double mean_lambdaijk = exp(lambda[j] + v(l + m, j) +
-                                      u(l + m, k));
+          double mean_lambdaijk;
+          if(j < S){
+            mean_lambdaijk = exp(lambda[j] + v(l, j) +
+              u(l, k) + offsets(l, k)); 
+          } else {
+            mean_lambdaijk = exp(lambda[j] + v(l, j) +
+              u(l, k));
+          }
+          // double mean_lambdaijk = exp(lambda[j] + v(l + m, j) +
+          //                             u(l + m, k));
           
           lambda_ijk2(l + m, k, j) = 
             R::rgamma(r_nb[j] + y(l + m, k, j), 

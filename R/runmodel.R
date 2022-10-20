@@ -115,6 +115,7 @@ cleanData <- function(data){
   PCR_spike <- data$PCR_spike
   spikeInBiomass <- data$spikeInBiomass
   spikeInPresent <- data$spikeInPresent
+  offsets <- data$offset
   
   if(!all(apply(PCR_table, 2, function(x){all(is.numeric(x))}))){
     stop("Non numeric elements in PCR table")
@@ -177,6 +178,12 @@ cleanData <- function(data){
     }
   }
   
+  if(is.null(offsets)){
+    
+    offsets <- matrix(0, sum(M_site) + emptyTubes, max(K))
+    
+  }
+  
   if(is.null(X_w0)){
     namesCovW <- NULL
     X_w <- matrix(0, nrow = length(samples), ncol = 0)
@@ -210,7 +217,7 @@ cleanData <- function(data){
     X_s <- scale(X_s)
   }
   
-  data <- list("y" = y,
+  list("y" = y,
                "infos" = infos,
                "M_site" = M_site,
                "K" = K,
@@ -223,7 +230,8 @@ cleanData <- function(data){
                "X_s" = X_s,
                "namesCovZ" = namesCovZ,
                "namesCovW" = namesCovW,
-               "sites" = sites)
+               "sites" = sites,
+               "offsets" = offsets)
   
 }
 
@@ -277,6 +285,7 @@ fitModel <- function(data,
     X_s <- data$X_s
     X_z <- data$X_z
     v_spikes <- data$v_spikes
+    offsets <- data$offsets
     spikedSample <- data$spikedSample
     sites <- data$sites
     infos <- data$infos
@@ -503,7 +512,7 @@ fitModel <- function(data,
     nburn <- MCMCparams$nburn
     niter <- MCMCparams$niter
     nthin <- MCMCparams$nthin
-    iterToAdapt <- Inf#MCMCparams$iterToAdapt  
+    iterToAdapt <- MCMCparams$iterToAdapt  
   }
   
   # output
@@ -1221,16 +1230,20 @@ fitModel <- function(data,
         
         # print("Update lambdaijk")
         
-        lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K,
+        lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, offsets, 
+                                       r_nb, c_imk, M_site, y, K,
                                        S_star, emptyTubes)
       }
       
       # VU ---------
       
       if(updateUV){
-        list_uv <- update_uv_poisgamma_cpp(u, v, logz, lambda, X_z, beta_theta, beta_z, beta0,
-                                           r_nb, mu, lambda_ijk, c_imk, delta, gamma, sigma, sigma_gamma,
-                                           sigma_u, M_site, X_w, beta_w, K, S_star, emptyTubes)
+        list_uv <- update_uv_poisgamma_cpp(u, v, offsets, logz, lambda, X_z, 
+                                           beta_theta, beta_z, beta0,
+                                           r_nb, mu, lambda_ijk, c_imk, delta, 
+                                           gamma, sigma, sigma_gamma,
+                                           sigma_u, M_site, X_w, beta_w, 
+                                           K, S_star, emptyTubes)
         u <- list_uv$u
         v <- list_uv$v
         # lambda <- list_uv$lambda
@@ -1243,7 +1256,7 @@ fitModel <- function(data,
         
         v <- update_v_poisgamma_cpp(v, logz,
                                     lambda,  X_z,
-                                    beta_theta, u, beta_z,
+                                    beta_theta, u, offsets, beta_z,
                                     beta0, r_nb, mu, lambda_ijk,
                                     c_imk, delta, gamma, sigma,
                                     sigma_gamma, M_site,
@@ -1256,7 +1269,7 @@ fitModel <- function(data,
       if(updateU){
         # print("Update u")
         
-        list_u <- update_u_poisgamma_cpp(v, u, lambda, beta0, beta_z, logz,
+        list_u <- update_u_poisgamma_cpp(v, u, offsets, lambda, beta0, beta_z, logz,
                                          mu, lambda_ijk, r_nb, X_w, beta_w, c_imk,
                                          delta, gamma, sigma_u, beta_theta, sigma,
                                          sigma_gamma, M_site,
@@ -1423,11 +1436,11 @@ fitModel <- function(data,
       if(updateR){
         # print("Update r")
         
-        r_nb <- update_r_nb_cpp(r_nb, lambda, u,
+        r_nb <- update_r_nb_cpp(r_nb, lambda, u, offsets,
                                 v, y, delta, gamma, c_imk, M_site, K,
                                 mean_r, sd_r,
                                 optimStep =  F,
-                                sd_r_proposal = .05)
+                                sd_r_proposal = .05, S, S_star)
         
       }
       
@@ -1435,18 +1448,49 @@ fitModel <- function(data,
       
       if(updateDeltaGammaC){
         # print("Update delta")
-        v_pres <- (delta == 1) | (gamma == 1)
-        list_deltagammac <- update_delta_c_d_rjmcmc(v_pres, y, v, lambda, r_nb,
-                                                    M_site, K, 
-                                                    mu0, n0, pi0, mu_tilde,
-                                                    n_tilde, u, logz, X_w, beta_w,
-                                                    sigma, mu, sigma_gamma, v_sd = .5,
-                                                    p_11, p_10, theta11, theta10, spikedSample,
-                                                    emptyTubes, S_star)
-        delta <- list_deltagammac$delta
-        gamma <- list_deltagammac$gamma
-        c_imk <- list_deltagammac$c_imk
-        v <- list_deltagammac$v
+        
+        if(iter < iterToAdapt){
+        
+          v_pres <- (delta == 1) | (gamma == 1)
+          list_deltagammac <- update_delta_c_d_rjmcmc(v_pres, y, v, lambda, r_nb,
+                                                      M_site, K, 
+                                                      mu0, n0, pi0, mu_tilde,
+                                                      n_tilde, u, offsets, logz, X_w, beta_w,
+                                                      sigma, mu, sigma_gamma, v_sd = .5,
+                                                      p_11, p_10, theta11, theta10, spikedSample,
+                                                      emptyTubes, S_star)
+          delta <- list_deltagammac$delta
+          gamma <- list_deltagammac$gamma
+          c_imk <- list_deltagammac$c_imk
+          v <- list_deltagammac$v
+          
+          
+        } else {
+          
+          list_deltagammac <- update_delta_c_d_proposals(v_pres, c_imk, delta, gamma,
+                                                         A_prop, y, v, lambda, r_nb,
+                                                         M_site, K, mu0, n0, pi0, 
+                                                         mu_tilde,
+                                                         n_tilde, u, 
+                                                         logz, X_w, beta_w,
+                                                         sigma, mu, sigma_gamma, 
+                                                         v_sd = .5,
+                                                         p_11, p_10, theta11, 
+                                                         theta10, 
+                                                         spikedSample,
+                                                         emptyTubes, S_star)
+          delta <- list_deltagammac$delta
+          gamma <- list_deltagammac$gamma
+          c_imk <- list_deltagammac$c_imk
+          v <- list_deltagammac$v
+          
+        }
+        
+        # if(){
+        #   
+        #   
+        #   
+        # }
         
       }
       
@@ -1454,7 +1498,8 @@ fitModel <- function(data,
       
       if(updateLambdaijk){
         
-        lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, r_nb, c_imk, M_site, y, K,
+        lambda_ijk <- update_lambdaijk(lambda, lambda_ijk, v, u, offsets, 
+                                       r_nb, c_imk, M_site, y, K,
                                        S_star, emptyTubes)
       }
       
