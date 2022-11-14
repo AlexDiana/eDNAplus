@@ -512,7 +512,7 @@ fitModel <- function(data,
     nburn <- MCMCparams$nburn
     niter <- MCMCparams$niter
     nthin <- MCMCparams$nthin
-    iterToAdapt <- MCMCparams$iterToAdapt  
+    iterToAdapt <- MCMCparams$nburn  
   }
   
   # output
@@ -1467,30 +1467,46 @@ fitModel <- function(data,
           
         } else {
           
-          list_deltagammac <- update_delta_c_d_proposals(v_pres, c_imk, delta, gamma,
-                                                         A_prop, y, v, lambda, r_nb,
-                                                         M_site, K, mu0, n0, pi0, 
-                                                         mu_tilde,
-                                                         n_tilde, u, 
-                                                         logz, X_w, beta_w,
-                                                         sigma, mu, sigma_gamma, 
-                                                         v_sd = .5,
-                                                         p_11, p_10, theta11, 
-                                                         theta10, 
-                                                         spikedSample,
-                                                         emptyTubes, S_star)
+          # if(iter %% 100 == 0){
+            # updateProposal(updateProposal,
+            #                delta,
+            #                gamma,
+            #                c_imk,
+            #                K)
+            # 
+          # }
+          # 
+          # list_deltagammac <- update_delta_c_d_proposals(v_pres, c_imk, delta, gamma,
+          #                                                A_prop, y, v, lambda, r_nb,
+          #                                                M_site, K, mu0, n0, pi0, 
+          #                                                mu_tilde,
+          #                                                n_tilde, u, 
+          #                                                logz, X_w, beta_w,
+          #                                                sigma, mu, sigma_gamma, 
+          #                                                v_sd = .5,
+          #                                                p_11, p_10, theta11, 
+          #                                                theta10, 
+          #                                                spikedSample,
+          #                                                emptyTubes, S_star)
+          # delta <- list_deltagammac$delta
+          # gamma <- list_deltagammac$gamma
+          # c_imk <- list_deltagammac$c_imk
+          # v <- list_deltagammac$v
+          
+          v_pres <- (delta == 1) | (gamma == 1)
+          list_deltagammac <- update_delta_c_d_rjmcmc(v_pres, y, v, lambda, r_nb,
+                                                      M_site, K, 
+                                                      mu0, n0, pi0, mu_tilde,
+                                                      n_tilde, u, offsets, logz, X_w, beta_w,
+                                                      sigma, mu, sigma_gamma, v_sd = .5,
+                                                      p_11, p_10, theta11, theta10, spikedSample,
+                                                      emptyTubes, S_star)
           delta <- list_deltagammac$delta
           gamma <- list_deltagammac$gamma
           c_imk <- list_deltagammac$c_imk
           v <- list_deltagammac$v
           
         }
-        
-        # if(){
-        #   
-        #   
-        #   
-        # }
         
       }
       
