@@ -66,6 +66,14 @@ head(data$X_w, 7)
 
 A matrix with samples on the rows and covariates on the columns. The name of the sample is in the first column. To match with the `infos` object, the names of the samples in the two objects have to be the same.
 
+* offset: Offsets for each sample
+
+```{r}
+head(data$offset, 7)
+```
+
+A matrix with samples on the rows and PCR on the columns reporting the offsets for each PCR replicates, as described in the paper. The order of the rows and columns has to be the same as the object PCR_table. If no normalisation are performed in the PCR process, you can omit this object.
+
 
 ## Priors
 
