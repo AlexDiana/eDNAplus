@@ -1,5 +1,5 @@
 
-library(tidyverse); library(nimble)
+library(tidyverse); library(nimble); library(here)
 
 nimbleCode_occupancy <- nimbleCode({
   
@@ -44,7 +44,7 @@ nimbleCode_occupancy <- nimbleCode({
   
 })
 
-load("~/eDNAPlus/Dataset/data_malaise.rda")
+load(here("Dataset","data_malaise.rda"))
 
 PCR_table <- data$PCR_table
 y1 <- PCR_table[,1:50]
