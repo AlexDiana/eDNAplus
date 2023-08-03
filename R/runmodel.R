@@ -165,7 +165,7 @@ cleanData <- function(data){
   
   OTUnames <- colnames(PCR_table[,1:S])
   if(S_star > 0){
-    OTUspike_names <- colnames(PCR_spike[,1:S_star])
+    OTUspike_names <- colnames(PCR_spike[,1:S_star,drop=F])
     OTUnames <- c(OTUnames, OTUspike_names)
   }
   
