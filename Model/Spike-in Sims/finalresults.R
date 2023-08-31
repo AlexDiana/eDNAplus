@@ -59,14 +59,14 @@ generalPlot <- function(data, title){
     scale_color_manual(values= c("#1C3FFD","#FF2D00")) +
     theme(plot.title = element_text(hjust = 0.5, size = 17),
           strip.text.x = element_text(size = 15, face = "bold", angle = 0),
-          axis.title = element_text(size = 16, face = "bold"),
-          axis.text.y = element_text(size = 16, face = "bold"),
-          axis.text.x = element_text(size = 16, face = "bold", angle = 0, hjust = 1),
+          axis.title = element_text(size = 18, face = "bold"),
+          axis.text.y = element_text(size = 18, face = "bold"),
+          axis.text.x = element_text(size = 18, face = "bold", angle = 0, hjust = 1),
           axis.line = element_line(colour="black", size=0.15),
           # panel.grid.minor = element_line(colour="grey", size=0.15),
           panel.grid.major = element_line(colour="grey", size=0.15),
-          legend.text=element_text(size=15),
-          legend.title=element_text(size=15),
+          legend.text=element_text(size=18),
+          legend.title=element_text(size=18),
           panel.background = element_rect(fill = "white", color = "black")) + 
     ggtitle(title)
   
@@ -108,14 +108,14 @@ generalPlot <- function(data, title){
     scale_color_manual(values= c("#1C3FFD","#FF2D00")) +
     theme(plot.title = element_text(hjust = 0.5, size = 17),
           strip.text.x = element_text(size = 15, face = "bold", angle = 0),
-          axis.title = element_text(size = 16, face = "bold"),
-          axis.text.y = element_text(size = 16, face = "bold"),
-          axis.text.x = element_text(size = 16, face = "bold", angle = 0, hjust = 1),
+          axis.title = element_text(size = 18, face = "bold"),
+          axis.text.y = element_text(size = 18, face = "bold"),
+          axis.text.x = element_text(size = 18, face = "bold", angle = 0, hjust = 1),
           axis.line = element_line(colour="black", size=0.15),
           # panel.grid.minor = element_line(colour="grey", size=0.15),
           panel.grid.major = element_line(colour="grey", size=0.15),
-          legend.text=element_text(size=15),
-          legend.title=element_text(size=15),
+          legend.text=element_text(size=18),
+          legend.title=element_text(size=18),
           panel.background = element_rect(fill = "white", color = "black")) + 
     ggtitle(title)
   
@@ -179,14 +179,14 @@ generalPlot <- function(data, title){
     scale_color_manual(values= c("#1C3FFD","#FF2D00")) +
     theme(plot.title = element_text(hjust = 0.5, size = 17),
           strip.text.x = element_text(size = 15, face = "bold", angle = 0),
-          axis.title = element_text(size = 16, face = "bold"),
-          axis.text.y = element_text(size = 16, face = "bold"),
-          axis.text.x = element_text(size = 16, face = "bold", angle = 0, hjust = 1),
+          axis.title = element_text(size = 18, face = "bold"),
+          axis.text.y = element_text(size = 18, face = "bold"),
+          axis.text.x = element_text(size = 18, face = "bold", angle = 0, hjust = 1),
           axis.line = element_line(colour="black", size=0.15),
           # panel.grid.minor = element_line(colour="grey", size=0.15),
           panel.grid.major = element_line(colour="grey", size=0.15),
-          legend.text=element_text(size=15),
-          legend.title=element_text(size=15),
+          legend.text=element_text(size=18),
+          legend.title=element_text(size=18),
           panel.background = element_rect(fill = "white", color = "black")) + 
     ggtitle(title)
   
@@ -228,14 +228,14 @@ generalPlot <- function(data, title){
     scale_color_manual(values= c("#1C3FFD","#FF2D00")) +
     theme(plot.title = element_text(hjust = 0.5, size = 17),
           strip.text.x = element_text(size = 15, face = "bold", angle = 0),
-          axis.title = element_text(size = 16, face = "bold"),
-          axis.text.y = element_text(size = 16, face = "bold"),
-          axis.text.x = element_text(size = 16, face = "bold", angle = 0, hjust = 1),
+          axis.title = element_text(size = 18, face = "bold"),
+          axis.text.y = element_text(size = 18, face = "bold"),
+          axis.text.x = element_text(size = 18, face = "bold", angle = 0, hjust = 1),
           axis.line = element_line(colour="black", size=0.15),
           # panel.grid.minor = element_line(colour="grey", size=0.15),
           panel.grid.major = element_line(colour="grey", size=0.15),
-          legend.text=element_text(size=15),
-          legend.title=element_text(size=15),
+          legend.text=element_text(size=18),
+          legend.title=element_text(size=18),
           panel.background = element_rect(fill = "white", color = "black")) + 
     ggtitle(title)
   

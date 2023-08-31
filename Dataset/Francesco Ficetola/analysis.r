@@ -1,6 +1,6 @@
 library(dplyr); library(here); library(reshape2)
 
-data <- read.csv(file = here("Data/Francesco Ficetola","lakedata.csv"))
+data <- read.csv(file = here("Dataset/Francesco Ficetola","lakedata.csv"))
 
 # plateinfo <- read.csv(file = here("Data/Francesco Ficetola","sampleplate.csv"), header = F)
 # 
@@ -10,7 +10,9 @@ data <- read.csv(file = here("Data/Francesco Ficetola","lakedata.csv"))
 # plateinfo$sample <- substr(plateinfo$sample, 1, 5)
 
 # isolate columns i need
-data_pcr <- data[,grepl("Scientific_name",colnames(data)) | 
+data_pcr <- 
+  # data[,grepl("Family_name",colnames(data)) | 
+  data[,grepl("Scientific_name",colnames(data)) |
                    grepl("sample.ANT",colnames(data)) | 
                    grepl("sample.RMT",colnames(data)) | 
                    grepl("sample.TEM",colnames(data)) ]
@@ -35,11 +37,11 @@ data_pcr <- data_pcr[,c(ncol(data_pcr) - 2:0, 1:(ncol(data_pcr) - 3) )]
 # match year to data --------
 
 {
-  sampleage <- read.csv(file =  here("Data/Francesco Ficetola","sampleage.csv"))
+  sampleage <- read.csv(file =  here("Dataset/Francesco Ficetola","sampleage.csv"))
   
   # sampleage <- sampleage[sampleage$Age_BC.AD != "-",]
   
-  colnames(sampleage)[3] <- "Age"
+  colnames(sampleage)[2] <- "Age"
   
   # isolate unique elements of the sample (only first 5 letters matter)
   sampleage$Sample <- substr(sampleage$Sample, 1, 5)
@@ -73,7 +75,7 @@ OTU_ET <- OTU[idxEmptyTubes,]
 
 # covariates ----------------
 
-variables <- read.table(here("Data/Francesco Ficetola","independent_variables.txt"))
+variables <- read.table(here("Dataset/Francesco Ficetola","independent_variables.txt"))
 
 data_age <- merge(data_TR, sampleage, by = "Sample", all.x = T)
 
@@ -186,14 +188,20 @@ for (m in seq_len(emptyTubes)) {
   data_infos$Sample[sum(M_site) + m] <- sample
 }
 
-X_z <- X[,c(1),drop = F]
+X_z_noname <- X[,c(4,5,6,7,8,9),drop = F]
 
-ncov_z <- ncol(X_z)
+ncov_z <- ncol(X_z_noname)
 
-X_z <- scale(X_z)
-# # assign NA to mean (remove later)
-# X_z[is.na(X_z[,2]),2] <- 0
+X_z <- scale(X_z_noname)
+
+X_z <- cbind(X[,c(2)], X_z_noname)
+# assign NA to mean (remove later)
+X_z[24,c(4,5,6,7)] <- X_z[23,c(4,5,6,7)]
+X_z[25,c(4,5,6,7)] <- X_z[26,c(4,5,6,7)]
 # X_z[is.na(X_z[,1]),1] <- 0
+
+X_t <- X[,c(2,1)]
+X_t[,2] <- scale(X_t[,2])
 
 X_w <- matrix(NA, nrow = sum(M_site), ncol = 0)
 # X_w <- as.matrix(X_w[match(samples, X_w$Lab_ID),])
@@ -205,18 +213,35 @@ X_w <- matrix(NA, nrow = sum(M_site), ncol = 0)
 
 save(OTU, y, X_w, X_z, n, M_site, K, X_w, data_infos, emptyTubes, file = here("Data","Lakes.Rdata"))
 
+# REARRANGE FOR MODEL 2 -------
+
+data_infos$Sample[length(data_infos$Sample) - 0:2] <- c("A","B","C")
+data_infos$Sample <- paste(data_infos$Site, data_infos$Sample, sep = "")
+
+colnames(X_z)[1] <- "Site"
+
+data_infos$Site[data_infos$Site == "0"] <- "empty"
+data_lakes <- list()
+data_lakes$PCR_table <- cbind(y[,1,], y[,2,], y[,3,], y[,4,])
+data_lakes$infos <- data.frame(data_infos, Replicates = K)
+data_lakes$X_z <- X_z
+data_lakes$X_s <- X_t
+
+data <- data_lakes
 
 
 
-# - -----------------------------------------------------------------------
+setwd("~/eDNAPlus/Dataset")
+save(data, file = "data_lakes.rda")
 
+# ------------------------------------------------------------------------
  
 # variables$Age <- sapply(1:nrow(variables), function(i){
   # sampleage$Age[which.min(abs(sampleage$Age - variables$Age[i]))]
 # })
 X <- merge(variables, sampleage)
 
-# samplesNotNAAges <- X$Sample[complete.cases(X)]
+samplesNotNAAges <- X$Sample[complete.cases(X)]
 
 
 # X <- X[match(samplesNotNAAges, X$Sample),]
@@ -258,6 +283,7 @@ for (i in 1:nrow(data_pcr)) {
 speciesNames <- colnames(data_pcr)[4:ncol(data_pcr)]
 
 save(y_jimk, Y, M_y, K_ym, X, speciesNames, file = "francescodata.rda")
+
 
 # plot --------
 

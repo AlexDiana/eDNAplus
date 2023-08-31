@@ -104,6 +104,8 @@ siteinfovars <- siteinfovars[!duplicated(siteinfovars$SiteName),]
 
 X_z <- siteinfovars[,c("SiteName", "be30", "lg_DistRoad")]
 
+X_s <- envcov_orig[,c("Site","UTM_E", "UTM_N")]
+
 uniqueSample_Xw <- unique(OTUtable$Sample)[-c(117:124)]
 
 X_w_0 <- envcov_orig[match(uniqueSample_Xw, envcov_orig$Sample),-c(1,2,3,165,166)]
@@ -122,50 +124,133 @@ OTUspikes <- sapply(OTUspecies, function(x){
 
 # read in species names ------
 
-speciesNamesTable <- read.csv("speciesNames.csv")
-speciesNamesTable <- speciesNamesTable[order(speciesNamesTable$occurrenceId),]
+speciesNamesTable <- read.csv("NewSpeciesNames.csv")
+
+speciesNamesTable$occurrenceId <- sapply(speciesNamesTable$occurrenceId, function(x){
+  strsplit(x, split = " ;")[[1]][1]
+})
+# speciesNamesTable <- speciesNamesTable[order(speciesNamesTable$occurrenceId),]
 
 speciesNames <- colnames(OTUtable)[-c(1,2,3)]
+# {
+#   write.table(speciesNames[1:1000], file = "speciesTable.csv", row.names = F)
+# }
 speciesNames <- paste0("S",gsub(".*S", "", speciesNames))
-OTUspeciesNames <- speciesNamesTable$classification[match(speciesNames[1:1000], 
-                                                          speciesNamesTable$occurrenceId)]
+
+
+idxSpeciesIncluded <- 1:1000
+
+OTUspeciesNames <- speciesNamesTable$classification[
+  match(speciesNames[idxSpeciesIncluded], 
+        speciesNamesTable$occurrenceId)
+  ]
+
+# duplicated(OTUspeciesNames)
 
 # cut data set ---------
 
 OTUtable0 <- OTUtable[4:ncol(OTUtable)]
 
+OTUtable0 <- OTUtable0[,idxSpeciesIncluded]
+
+# summarise
+{
+  OTU_nonspike_t <- as.data.frame(t(OTUtable0))
+  OTU_nonspike_t$SpeciesName <- OTUspeciesNames
+  
+  OTU_nonspike_t <- OTU_nonspike_t %>% group_by(SpeciesName) %>% summarise_all(sum)
+  # OTU_nonspike_t <- OTU_nonspike_t[match(OTUspeciesNames,
+  #                                        OTU_nonspike_t$SpeciesName),]
+  
+  
+  # OTU_nonspike_t <- OTU_nonspike_t %>% arrange(SpeciesIndex)
+  speciesNameNew <- OTU_nonspike_t$SpeciesName
+  OTU_nonspike_t$SpeciesName <- NULL
+  OTU_nonspike_2 <- t(OTU_nonspike_t)
+  colnames(OTU_nonspike_2) <- speciesNameNew
+  OTU_nonspike_2 <- as.data.frame(OTU_nonspike_2)
+  OTU_nonspike_2 <- OTU_nonspike_2[,grepl("Animalia",colnames(OTU_nonspike_2))]
+  # OTU_nonspike <- OTU_nonspike_2[1:S]
+  OTUtable0_new <- OTU_nonspike_2
+}
+
 # order by species presence
-sumreadspecies <- apply(OTUtable0, 2, sum)
-nonNAreadspecies <- apply(OTUtable0, 2, function(x){
+# sumreadspecies <- apply(OTUtable0, 2, sum)
+
+
+nonNAreadspecies <- apply(OTUtable0_new, 2, function(x){
   sum(x > 3)
 })
-# OTUtable <- OTUtable[,c(1:3, 3 + order(-sumreadspecies))]
+OTUtable_new <- OTUtable0_new[,order(-nonNAreadspecies)]
+
+speciesToSelect <- 50
 
 data <- OTUtable[,1:3]
-OTU <- OTUtable[,-c(1:3)]
+OTU <- OTUtable_new[,1:speciesToSelect]#OTUtable[,-c(1:3)]
 OTU_0 <- OTU
 
-OTU <- OTU[,order(-nonNAreadspecies)]
-OTUspecies <- OTUspecies[order(-nonNAreadspecies)]
-OTUspikes <- OTUspikes[order(-nonNAreadspecies)]
+# OTU <- OTU[,order(-nonNAreadspecies)]
+# OTUspecies <- OTUspecies[order(-nonNAreadspecies)]
+# OTUspikes <- OTUspikes[order(-nonNAreadspecies)]
 
-OTU_nonspike <- OTU[,1:1000]
-OTU_spike <- OTU[,OTUspikes]
+# OTU <- OTU[,1:1000]
+# OTUspecies <- OTUspecies[1:1000]
+# OTUspikes <- OTUspikes[1:1000]
+
+OTU_nonspike <- OTU#[,1:1000]
+OTU_spike <- (OTUtable[,-c(1,2,3)])[,OTUspikes]
 OTU_spike <- OTU_spike[,c(1,2)]
 
-speciesNames_nonspike <- colnames(OTU_nonspike)
-speciesNames_nonspike <- paste0("S",gsub(".*S", "", speciesNames_nonspike))
-OTUspeciesNames <- speciesNamesTable$classification[match(speciesNames_nonspike, 
-                                                          speciesNamesTable$occurrenceId)]
-idx_nonduplicated <- which(!duplicated(OTUspeciesNames) & !is.na(OTUspeciesNames))
-OTU_nonspike <- OTU_nonspike[,idx_nonduplicated]
-colnames(OTU_nonspike) <- OTUspeciesNames[idx_nonduplicated]
+# speciesNames_nonspike <- colnames(OTU_nonspike)
+# speciesNames_nonspike <- paste0("S",gsub(".*S", "", speciesNames_nonspike))
+
+# match to existing names
+{
+  # S <- 50
+  # speciesPresent <- speciesNames_nonspike %in% speciesNamesTable$occurrenceId
+  # idxSpeciesPresent <- which(speciesPresent == 1)[setdiff(1:(S+1), 46)]
+}
+
+# filter species
+{
+  # OTU_nonspike <- OTU[,idxSpeciesPresent]
+  # speciesNames_nonspike <- speciesNames_nonspike[idxSpeciesPresent]
+}
+
+# OTUspeciesNames <- speciesNamesTable$classification[match(speciesNames_nonspike, 
+                                                          # speciesNamesTable$occurrenceId)]
+
+
+
+# eliminate duplicates
+# idx_nonduplicated <- which(!duplicated(OTUspeciesNames) & !is.na(OTUspeciesNames))
+# OTU_nonspike <- OTU_nonspike[,idx_nonduplicated]
+# colnames(OTU_nonspike) <- OTUspeciesNames[idx_nonduplicated]
+
+# summaries
+
+# OTU_nonspike_t <- as.data.frame(t(OTU_nonspike))
+# OTU_nonspike_t$SpeciesName <- OTUspeciesNames
+# 
+# OTU_nonspike_t <- OTU_nonspike_t %>% group_by(SpeciesName) %>% summarise_all(sum)
+# OTU_nonspike_t <- OTU_nonspike_t[match(OTUspeciesNames,
+#                                        OTU_nonspike_t$SpeciesName),]
+# 
+# 
+# # OTU_nonspike_t <- OTU_nonspike_t %>% arrange(SpeciesIndex)
+# speciesNameNew <- OTU_nonspike_t$SpeciesName
+# OTU_nonspike_t$SpeciesName <- NULL
+# OTU_nonspike_2 <- t(OTU_nonspike_t)
+# colnames(OTU_nonspike_2) <- speciesNameNew
+# OTU_nonspike_2 <- as.data.frame(OTU_nonspike_2)
+# OTU_nonspike_2 <- OTU_nonspike_2[,grepl("Animalia",colnames(OTU_nonspike_2))]
+# OTU_nonspike <- OTU_nonspike_2[1:S]
 
 # rebalance with lysis ratio ---------
 
 all(data$Sample %in% envcov_orig$Sample)
 
-lysis_ratio_factor <- sapply(1:nrow(OTU_spike), function(i){
+biom_factor <- sapply(1:nrow(OTU_spike), function(i){
   current <- 1 / envcov_orig$lysis_ratio[which(envcov_orig$Sample == data$Sample[i])]
   if(!is.na(current)){
     return(current)
@@ -174,20 +259,23 @@ lysis_ratio_factor <- sapply(1:nrow(OTU_spike), function(i){
   }
 })
 
-lysis_ratio_factor <- lysis_ratio_factor / mean(lysis_ratio_factor, na.rm = T)
-lysis_ratio_factor[is.na(lysis_ratio_factor)] <- 1
+biom_factor <- biom_factor / mean(biom_factor, na.rm = T)
+biom_factor[is.na(biom_factor)] <- 1
 
-i <- 0
-OTU_spike <- t(apply(OTU_spike, 1, function(x){
-  i <<- i + 1
-  round(x * lysis_ratio_factor[i])
-}))
+offsets <- - log(biom_factor)
 
-i <- 0
-OTU_nonspike <- t(apply(OTU_nonspike, 1, function(x){
-  i <<- i + 1
-  round(x * lysis_ratio_factor[i])
-}))
+data$Offset <- offsets
+# i <- 0
+# OTU_spike <- t(apply(OTU_spike, 1, function(x){
+#   i <<- i + 1
+#   round(x * lysis_ratio_factor[i])
+# }))
+
+# i <- 0
+# OTU_nonspike <- t(apply(OTU_nonspike, 1, function(x){
+#   i <<- i + 1
+#   round(x * lysis_ratio_factor[i])
+# }))
 
 # save(data, OTU_nonspike, OTU_spike,
 #      uniqueSite_Xz, X_w_0, uniqueSample_Xw, X_z_0, file = "malaise.rda")
@@ -217,6 +305,9 @@ y <- array(NA, dim = c(sum(M_site) + emptyTubes, max(K), S + S_star),
                                                             colnames(OTU_spike))))
 data_infos <- data.frame(Site = rep(0, sum(M_site) + emptyTubes),
                          Sample = rep(0, sum(M_site) + emptyTubes))
+data_offsets <- matrix(NA, 
+                       nrow = sum(M_site) + emptyTubes,
+                       ncol = max(K))
 for (i in 1:n) {
   print(i)
   site <- sites[i]
@@ -238,9 +329,16 @@ for (i in 1:n) {
                                                       data$Sample == sample &
                                                       data$PCR == rep, j]
       }
+      
+      data_offsets[m + sum(M_site[seq_len(i-1)]),k] <- data$Offset[data$Site == site &
+                                                                     data$Sample == sample &
+                                                                     data$PCR == rep]
+      
     }
     data_infos$Site[m + sum(M_site[seq_len(i-1)])] <- site
     data_infos$Sample[m + sum(M_site[seq_len(i-1)])] <- sample
+    
+    
   }
 }
 
@@ -264,6 +362,11 @@ for (m in 1:emptyTubes) {
                                                               data$Sample == sample &
                                                               data$PCR == rep, j]
     }
+    
+    data_offsets[m + sum(M_site[seq_len(i-1)]),k] <- data$Offset[data$Site == site &
+                                                                   data$Sample == sample &
+                                                                   data$PCR == rep]
+    
   }
   data_infos$Site[m + sum(M_site)] <- site
   data_infos$Sample[m + sum(M_site)] <- sample
@@ -313,6 +416,8 @@ spikedSample <- rbind(matrix(1, nrow = sum(M_site), S_star),
 data <- list("PCR_table" = PCR_table,
              "infos" = infos,
              "X_z" = X_z,
+             "X_s" = X_s,
+             "offset" = data_offsets,
              "PCR_spike" = PCR_spike,
              "spikedSample " = spikedSample)
 
